@@ -14,6 +14,14 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    /** Brand blue — matches the splash backgroundColor in app.json. */
+    primary: '#208AEF',
+    /** Text/icons drawn on top of `primary`. */
+    onPrimary: '#FFFFFF',
+    border: '#DDE1E6',
+    danger: '#C62B2B',
+    success: '#127C40',
+    warning: '#8A5A00',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +29,12 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    primary: '#4FA3F7',
+    onPrimary: '#04121F',
+    border: '#2E3135',
+    danger: '#F27272',
+    success: '#4BC07E',
+    warning: '#E0A02E',
   },
 } as const;
 
