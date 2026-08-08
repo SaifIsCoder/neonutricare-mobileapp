@@ -7,8 +7,13 @@
 
 import "react-native-url-polyfill/auto";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+
+// Not a direct AsyncStorage import: that native module throws on import in a
+// build compiled before it was added, and because this file is reached from the
+// root layout, a throw here leaves every route with no exports. See
+// session-storage.ts.
+import { sessionStorage } from "@/lib/session-storage";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -25,7 +30,7 @@ if (!supabaseUrl || !supabasePublishableKey) {
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: sessionStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false, // required for React Native — there is no URL to parse

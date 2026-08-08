@@ -8,8 +8,15 @@ import { Platform } from 'react-native';
 
 import { toApiPayload, type FormValues } from '@/lib/prediction-form';
 
-/** docs/API.md §7 recommends a client timeout with a retry on failure. */
-const TIMEOUT_MS = 10_000;
+/**
+ * docs/API.md §7 recommends a client timeout with a retry on failure.
+ *
+ * 30s rather than 10s because Render's free tier spins an idle instance down,
+ * and the next request has to wait for a cold start. A warm /predict answers in
+ * well under a second, so a long wait here always means cold start or no
+ * connectivity — never slow inference.
+ */
+const TIMEOUT_MS = 30_000;
 
 export type PredictionResult = {
   prediction: 'Healthy' | 'At Risk';
@@ -101,7 +108,8 @@ export async function runPrediction(values: FormValues): Promise<PredictionResul
     throw new PredictionError(
       'network',
       aborted
-        ? `The prediction service did not respond within ${TIMEOUT_MS / 1000} seconds.`
+        ? `The prediction service did not respond within ${TIMEOUT_MS / 1000} seconds. ` +
+          'If it is hosted on a free plan it may be waking from idle — try again in a moment.'
         : `Could not reach the prediction service at ${API_URL}. Check that it is running and that the device can see it.`,
       true,
     );
