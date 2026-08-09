@@ -136,25 +136,64 @@ def to_feature_row(payload: dict) -> list:
     return row
 
 
-def build_recommendation(label: str, features: dict) -> str:
-    if label == "Healthy":
-        rec = (
-            "Results look reassuring. Continue iron-rich meals and keep all antenatal "
-            "visits on schedule. Recheck hemoglobin in 4 weeks."
-        )
-    else:
-        rec = (
-            "Screening suggests elevated risk. Please consult a healthcare provider "
-            "promptly. Prioritize antenatal visits and iron/folate supplementation."
-        )
+# The application's existing threshold (docs/API.md §4). Not a new clinical claim.
+LOW_HEMOGLOBIN_THRESHOLD = 11.0
 
+
+def confidence_level(confidence: float) -> str:
+    """Qualitative band for the predicted-class probability.
+
+    Presentation only — the numeric probability is returned unchanged. A 0.51
+    prediction must not read as equivalent to a 0.98 one.
+    """
+    if confidence >= 0.80:
+        return "High confidence"
+    if confidence >= 0.60:
+        return "Moderate confidence"
+    return "Low confidence"
+
+
+def _hemoglobin_is_low(features: dict) -> bool:
+    """True only when hemoglobin parses AND is under the threshold.
+
+    An unparseable or absent value is treated as not-low, so the service never
+    invents a warning it cannot substantiate.
+    """
     try:
-        if float(features.get("hemoglobin", 99)) < 11:
-            rec += " Hemoglobin is low — discuss anemia management with your provider."
-    except (TypeError, ValueError):
-        pass
+        return float(features["hemoglobin"]) < LOW_HEMOGLOBIN_THRESHOLD
+    except (KeyError, TypeError, ValueError):
+        return False
 
-    return rec
+
+def build_recommendation(label: str, features: dict) -> str:
+    """Low hemoglobin takes priority over reassuring language.
+
+    Previously the reassurance sentence was emitted first and the low-hemoglobin
+    note appended, producing "Results look reassuring. Hemoglobin is low." — two
+    halves pulling in opposite directions.
+    """
+    low_hb = _hemoglobin_is_low(features)
+
+    if label == "Healthy":
+        if low_hb:
+            return (
+                "The model assessment is Healthy, but hemoglobin is below the reference "
+                "threshold. Please consult a qualified healthcare professional for "
+                "appropriate evaluation."
+            )
+        return "Results appear reassuring based on the model assessment."
+
+    if low_hb:
+        return (
+            "The model assessment indicates elevated risk, and hemoglobin is below the "
+            "reference threshold. Please consult a qualified healthcare professional for "
+            "appropriate evaluation."
+        )
+
+    return (
+        "Screening suggests elevated risk. Please consult a healthcare provider "
+        "promptly. Prioritize antenatal visits and iron/folate supplementation."
+    )
 
 
 @app.get("/health")
@@ -176,12 +215,21 @@ def predict(body: PredictIn):
     frame = pd.DataFrame([row], columns=FEATURE_LIST)
 
     proba = MODEL.predict_proba(frame)[0]
-    idx = int(proba.argmax())
-    raw_class = int(MODEL.classes_[idx])
-    label = LABELS.get(raw_class, str(raw_class))
+
+    # Confidence is the probability of the class the model actually predicts,
+    # located by its POSITION in MODEL.classes_ — never a hardcoded column index.
+    # (For a forest, predict() is the argmax of predict_proba(), so this agrees
+    # with the previous argmax form; taking it from predict() makes that explicit
+    # and stays correct regardless of class ordering.)
+    predicted_class = int(MODEL.predict(frame)[0])
+    class_index = list(MODEL.classes_).index(predicted_class)
+    confidence = round(float(proba[class_index]), 4)
+
+    label = LABELS.get(predicted_class, str(predicted_class))
 
     return {
         "prediction": label,
-        "confidence": round(float(proba[idx]), 4),
+        "confidence": confidence,
+        "confidence_level": confidence_level(confidence),
         "recommendation": build_recommendation(label, features),
     }

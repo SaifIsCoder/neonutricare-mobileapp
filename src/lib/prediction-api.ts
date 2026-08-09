@@ -22,6 +22,12 @@ export type PredictionResult = {
   prediction: 'Healthy' | 'At Risk';
   confidence: number;
   recommendation: string;
+  /**
+   * "High confidence" | "Moderate confidence" | "Low confidence".
+   * Optional so older deployments of the service still validate — the UI derives
+   * the same band from `confidence` anyway (see confidenceBand()).
+   */
+  confidence_level?: string;
 };
 
 export type PredictionErrorKind =

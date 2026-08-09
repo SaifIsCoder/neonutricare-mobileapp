@@ -43,9 +43,19 @@ export type PredictionRow = {
 export async function submitAssessment(values: FormValues): Promise<string> {
   const result: PredictionResult = await runPrediction(values);
 
+  // Insert only the columns that exist on `predictions` (docs/DATABASE.md §2.2)
+  // rather than spreading the whole response. The API also returns
+  // `confidence_level`, which is derived presentation data with no column — and
+  // spreading it would fail the insert. The UI recomputes the band from
+  // `confidence` via confidenceBand(), so nothing is lost.
   const { data, error } = await supabase
     .from('predictions')
-    .insert({ ...toDbRow(values), ...result })
+    .insert({
+      ...toDbRow(values),
+      prediction: result.prediction,
+      confidence: result.confidence,
+      recommendation: result.recommendation,
+    })
     .select('id')
     .single();
 
