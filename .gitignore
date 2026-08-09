@@ -30,10 +30,7 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env
-.env*.local
-!.env.example
+
 
 # typescript
 *.tsbuildinfo
@@ -43,3 +40,16 @@ example
 # generated native folders
 /ios
 /android
+
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment
+.env
+.env.*
+!.env.example
