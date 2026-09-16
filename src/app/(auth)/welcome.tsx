@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,9 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Layout, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+/** `.onb` — a tinted art panel above the value proposition and two actions. */
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -15,30 +17,27 @@ export default function WelcomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.hero}>
-          <View style={[styles.logo, { backgroundColor: theme.primary }]}>
-            <ThemedText style={[styles.logoMark, { color: theme.onPrimary }]}>N</ThemedText>
-          </View>
-
-          <ThemedText type="subtitle" style={styles.heading}>
-            NeoNutriCare
-          </ThemedText>
-
-          <ThemedText style={[styles.tagline, { color: theme.textSecondary }]}>
-            Newborn malnutrition risk screening and maternal support, guided by your antenatal
-            history.
-          </ThemedText>
+        <View style={[styles.art, { backgroundColor: theme.primaryLight }]}>
+          <Ionicons name="fitness" size={64} color={theme.primary} />
         </View>
 
-        <View style={styles.actions}>
-          <Button title="Get started" onPress={() => router.push('/register')} />
-          <Button
-            title="I already have an account"
-            variant="secondary"
-            onPress={() => router.push('/login')}
-          />
+        <View style={styles.body}>
+          <ThemedText type="subtitle">Know the risk early, act with confidence</ThemedText>
 
-          <ThemedText type="small" style={[styles.disclaimer, { color: theme.textSecondary }]}>
+          <ThemedText type="default" style={[styles.tagline, { color: theme.textSecondary }]}>
+            AI-based newborn malnutrition risk screening plus guided maternal care, in one app.
+          </ThemedText>
+
+          <View style={styles.actions}>
+            <Button title="Get started" onPress={() => router.push('/register')} />
+            <Button
+              title="I already have an account"
+              variant="outline"
+              onPress={() => router.push('/login')}
+            />
+          </View>
+
+          <ThemedText type="small" style={[styles.disclaimer, { color: theme.textMuted }]}>
             NeoNutriCare provides a screening indication, not a diagnosis. Always consult a
             qualified health provider.
           </ThemedText>
@@ -49,30 +48,27 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', justifyContent: 'center' },
+  container: { flex: 1 },
   safeArea: {
     flex: 1,
     width: '100%',
     maxWidth: MaxContentWidth,
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.four,
+    alignSelf: 'center',
   },
-  hero: {
+  art: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    borderRadius: Spacing.four,
+    margin: Layout.screenPaddingX,
+    marginBottom: 0,
+    borderRadius: Radius.xxl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoMark: { fontSize: 48, fontWeight: '700', lineHeight: 56 },
-  heading: { textAlign: 'center' },
-  tagline: { textAlign: 'center', maxWidth: 320 },
-  actions: { gap: Spacing.three },
-  disclaimer: { textAlign: 'center', paddingHorizontal: Spacing.two },
+  body: {
+    padding: Spacing.four - 2,
+    paddingBottom: Spacing.four + 6,
+    gap: Spacing.two,
+  },
+  tagline: { marginBottom: Spacing.two },
+  actions: { gap: Layout.listGap },
+  disclaimer: { textAlign: 'center', marginTop: Spacing.two },
 });

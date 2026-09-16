@@ -6,3 +6,5 @@ numpy
 pandas
 pydantic>=2
 scipy
+google-genai
+python-dotenv

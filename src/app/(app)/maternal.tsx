@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { ListCard, type Tone } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, SkeletonList } from '@/components/ui/state-views';
-import { Spacing } from '@/constants/theme';
+import { Layout, Spacing } from '@/constants/theme';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
@@ -18,13 +19,18 @@ type Guide = {
   body: string | null;
 };
 
-/** Seeded icon names are Font Awesome-ish; map them onto Ionicons. */
-const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  baby: 'body-outline',
-  carrot: 'nutrition-outline',
-  dumbbell: 'barbell-outline',
-  'calendar-check': 'calendar-outline',
+/**
+ * Seeded icon names are Font Awesome-ish; map them onto Ionicons plus the tint
+ * the mockup gives each guide (teal, green, blue, amber in seed order).
+ */
+const GUIDE_STYLE: Record<string, { icon: keyof typeof Ionicons.glyphMap; tone: Tone }> = {
+  baby: { icon: 'body', tone: 'teal' },
+  carrot: { icon: 'nutrition', tone: 'green' },
+  dumbbell: { icon: 'barbell', tone: 'blue' },
+  'calendar-check': { icon: 'calendar', tone: 'amber' },
 };
+
+const FALLBACK_TONES: Tone[] = ['teal', 'green', 'blue', 'amber'];
 
 export default function MaternalScreen() {
   const theme = useTheme();
@@ -46,6 +52,7 @@ export default function MaternalScreen() {
     <Screen
       title="Maternal support"
       subtitle="Guidance through pregnancy and after"
+      showBack
       onRefresh={refresh}
       refreshing={refreshing}>
       {!!error && <ErrorState message={error} onRetry={refresh} />}
@@ -60,58 +67,39 @@ export default function MaternalScreen() {
       )}
 
       <View style={styles.list}>
-        {guides?.map((guide) => {
+        {guides?.map((guide, index) => {
           const expanded = expandedId === guide.id;
           const hasBody = !!guide.body?.trim();
+          const style = GUIDE_STYLE[guide.icon ?? ''] ?? {
+            icon: 'heart' as keyof typeof Ionicons.glyphMap,
+            tone: FALLBACK_TONES[index % FALLBACK_TONES.length],
+          };
 
           return (
-            <Pressable
+            <ListCard
               key={guide.id}
-              accessibilityRole="button"
-              accessibilityState={{ expanded }}
-              disabled={!hasBody}
-              onPress={() => setExpandedId(expanded ? null : guide.id)}
-              style={({ pressed }) => [
-                styles.card,
-                {
-                  backgroundColor: theme.backgroundElement,
-                  borderColor: theme.border,
-                  opacity: pressed && hasBody ? 0.85 : 1,
-                },
-              ]}>
-              <View style={styles.cardHeader}>
-                <View style={[styles.icon, { backgroundColor: theme.background }]}>
-                  <Ionicons
-                    name={ICONS[guide.icon ?? ''] ?? 'heart-outline'}
-                    size={22}
-                    color={theme.primary}
-                  />
-                </View>
-
-                <View style={styles.cardText}>
-                  <ThemedText type="smallBold">{guide.title}</ThemedText>
-                  {!!guide.subtitle && (
-                    <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      {guide.subtitle}
-                    </ThemedText>
-                  )}
-                </View>
-
-                {hasBody && (
+              icon={style.icon}
+              tone={style.tone}
+              title={guide.title}
+              subtitle={guide.subtitle ?? undefined}
+              onPress={hasBody ? () => setExpandedId(expanded ? null : guide.id) : undefined}
+              trailing={
+                hasBody ? (
                   <Ionicons
                     name={expanded ? 'chevron-up' : 'chevron-down'}
-                    size={18}
-                    color={theme.textSecondary}
+                    size={16}
+                    color={theme.textMuted}
                   />
-                )}
-              </View>
-
+                ) : null
+              }>
               {expanded && !!guide.body && (
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                <ThemedText
+                  type="small"
+                  style={[styles.body, { color: theme.textSecondary, borderTopColor: theme.border }]}>
                   {guide.body}
                 </ThemedText>
               )}
-            </Pressable>
+            </ListCard>
           );
         })}
       </View>
@@ -119,8 +107,8 @@ export default function MaternalScreen() {
       {/* The seed rows carry no body text, so say so rather than looking broken. */}
       {!loading && !error && !!guides?.length && guides.every((g) => !g.body?.trim()) && (
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          Guide contents have not been written yet. Add a `body` to each row in
-          `maternal_guides` and it will appear here.
+          Guide contents have not been written yet. Add a `body` to each row in `maternal_guides`
+          and it will appear here.
         </ThemedText>
       )}
     </Screen>
@@ -128,20 +116,6 @@ export default function MaternalScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { gap: Spacing.two },
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: {
-    width: 44,
-    height: 44,
-    borderRadius: Spacing.two,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardText: { flex: 1, gap: Spacing.half },
+  list: { gap: Layout.listGap },
+  body: { borderTopWidth: 1, paddingTop: Spacing.two + 2, marginTop: Spacing.one },
 });

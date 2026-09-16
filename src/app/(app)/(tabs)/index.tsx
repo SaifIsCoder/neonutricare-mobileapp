@@ -1,13 +1,13 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Disclaimer } from '@/components/disclaimer';
 import { ThemedText } from '@/components/themed-text';
-import { Screen } from '@/components/ui/screen';
+import { ListCard, SectionLabel, type Tone } from '@/components/ui/card';
+import { IconButton, Screen } from '@/components/ui/screen';
 import { ErrorState, SkeletonCard } from '@/components/ui/state-views';
-import { Spacing } from '@/constants/theme';
+import { Layout, Radius, Spacing } from '@/constants/theme';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
@@ -42,51 +42,93 @@ export default function DashboardScreen() {
 
   return (
     <Screen
-      title={`Hello, ${greetingName}`}
-      subtitle="Your screening overview"
+      title={greetingName}
       onRefresh={refresh}
-      refreshing={refreshing}>
+      refreshing={refreshing}
+      header={
+        <>
+          <View style={[styles.avatar, { backgroundColor: theme.primaryLight }]}>
+            <ThemedText type="cardTitle" style={{ color: theme.primaryDark }}>
+              {initials(greetingName)}
+            </ThemedText>
+          </View>
+
+          <View style={styles.greeting}>
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              {timeOfDayGreeting()}
+            </ThemedText>
+            <ThemedText type="screenTitle" numberOfLines={1}>
+              {greetingName}
+            </ThemedText>
+          </View>
+
+          <IconButton icon="refresh" accessibilityLabel="Refresh overview" onPress={refresh} />
+        </>
+      }>
       {!!error && <ErrorState message={error} onRetry={refresh} />}
 
       {loading && !error ? (
         <SkeletonCard lines={2} />
       ) : (
-        <View style={styles.statRow}>
-          <StatCard label="Total" value={stats?.total_assessments} tint={theme.primary} />
-          <StatCard label="Low risk" value={stats?.low_risk_cases} tint={theme.success} />
-          <StatCard label="High risk" value={stats?.high_risk_cases} tint={theme.danger} />
+        <View style={styles.metricGrid}>
+          <Metric
+            value={stats?.total_assessments}
+            label="Total assessments"
+            tone="teal"
+            style={styles.metricHalf}
+          />
+          <Metric
+            value={stats?.low_risk_cases}
+            label="Low risk cases"
+            tone="green"
+            style={styles.metricHalf}
+          />
+          <Metric
+            value={stats?.high_risk_cases}
+            label="High risk cases"
+            tone="amber"
+            style={styles.metricFull}
+          />
         </View>
       )}
 
+      <SectionLabel style={styles.sectionLabel}>Quick actions</SectionLabel>
+
       <View style={styles.actions}>
-        <ActionCard
-          icon="pulse"
-          title="New assessment"
-          caption="14 questions, about two minutes"
+        <ListCard
+          icon="clipboard"
+          tone="teal"
+          title="Risk prediction"
+          subtitle="Run a new malnutrition screening"
           onPress={() => router.push('/predict')}
         />
-        <ActionCard
-          icon="document-text"
-          title="Health records"
-          caption="Review your past screenings"
-          onPress={() => router.push('/records')}
-        />
-        <ActionCard
-          icon="heart"
+        <ListCard
+          icon="woman"
+          tone="blue"
           title="Maternal support"
-          caption="Pregnancy, nutrition and checkup guides"
+          subtitle="Guides for pregnancy & nutrition"
           onPress={() => router.push('/maternal')}
         />
-        <ActionCard
-          icon="bulb"
+        <ListCard
+          icon="time"
+          tone="green"
+          title="Health records"
+          subtitle="View prediction history"
+          onPress={() => router.push('/records')}
+        />
+        <ListCard
+          icon="leaf"
+          tone="amber"
           title="Health tips"
-          caption="Nutrition and antenatal guidance"
+          subtitle="Daily nutrition & care advice"
           onPress={() => router.push('/tips')}
         />
-        <ActionCard
+        <ListCard
           icon="chatbubbles"
-          title="AI assistant"
-          caption="Coming soon"
+          tone="muted"
+          title="AI health assistant"
+          subtitle="Coming soon"
+          muted
           onPress={() => router.push('/assistant')}
         />
       </View>
@@ -96,87 +138,74 @@ export default function DashboardScreen() {
   );
 }
 
-function StatCard({ label, value, tint }: { label: string; value?: number; tint: string }) {
+/** `.metric` — a soft tinted tile with a display numeral over a small caption. */
+function Metric({
+  value,
+  label,
+  tone,
+  style,
+}: {
+  value?: number;
+  label: string;
+  tone: Tone;
+  style?: StyleProp<ViewStyle>;
+}) {
   const theme = useTheme();
 
+  const palette = {
+    teal: { fill: theme.primaryLight, ink: theme.primaryDark },
+    green: { fill: theme.successLight, ink: theme.success },
+    amber: { fill: theme.warningLight, ink: theme.warning },
+    blue: { fill: theme.infoLight, ink: theme.info },
+    muted: { fill: theme.neutralLight, ink: theme.textMuted },
+  }[tone];
+
   return (
-    <View
-      style={[
-        styles.statCard,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-      ]}>
-      <ThemedText style={[styles.statValue, { color: tint }]}>{value ?? '—'}</ThemedText>
-      <ThemedText type="small" style={{ color: theme.textSecondary }} numberOfLines={1}>
+    <View style={[styles.metric, { backgroundColor: palette.fill }, style]}>
+      <ThemedText type="metric" style={{ color: palette.ink }}>
+        {value ?? '—'}
+      </ThemedText>
+      <ThemedText type="label" style={{ color: theme.textSecondary }} numberOfLines={1}>
         {label}
       </ThemedText>
     </View>
   );
 }
 
-function ActionCard({
-  icon,
-  title,
-  caption,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  caption: string;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
+function timeOfDayGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.actionCard,
-        {
-          backgroundColor: theme.backgroundElement,
-          borderColor: theme.border,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}>
-      <View style={[styles.actionIcon, { backgroundColor: theme.background }]}>
-        <Ionicons name={icon} size={22} color={theme.primary} />
-      </View>
-      <View style={styles.actionText}>
-        <ThemedText type="smallBold">{title}</ThemedText>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          {caption}
-        </ThemedText>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-    </Pressable>
-  );
+/** Up to two initials for the avatar tile, mirroring the mockup's "AK". */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const letters = parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[1][0];
+  return letters.toUpperCase();
 }
 
 const styles = StyleSheet.create({
-  statRow: { flexDirection: 'row', gap: Spacing.two },
-  statCard: {
-    flex: 1,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.half,
-  },
-  statValue: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
-  actions: { gap: Spacing.two },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Spacing.two,
+  avatar: {
+    width: Layout.iconButtonSize,
+    height: Layout.iconButtonSize,
+    borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionText: { flex: 1, gap: Spacing.half },
+  greeting: { flex: 1 },
+  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.listGap },
+  metric: {
+    borderRadius: Radius.lg,
+    padding: Spacing.three - 4,
+    gap: Spacing.half,
+  },
+  // Two per row, then one spanning the full width — the mockup's 1fr 1fr grid
+  // with `grid-column: span 2` on the third tile.
+  metricHalf: { flexGrow: 1, flexBasis: '45%' },
+  metricFull: { flexGrow: 1, flexBasis: '100%' },
+  sectionLabel: { marginTop: Spacing.one },
+  actions: { gap: Layout.listGap },
 });

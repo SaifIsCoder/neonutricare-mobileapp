@@ -1,19 +1,30 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  View,
   type PressableProps,
   type ViewStyle,
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Layout, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+/**
+ * `primary`  → `.btn-primary`: solid teal, white label.
+ * `outline`  → `.btn-outline`: white fill, 1.5px teal border, teal label.
+ * `secondary` is kept as an alias of `outline` so existing call sites are unchanged.
+ */
+export type ButtonVariant = 'primary' | 'outline' | 'secondary' | 'ghost';
 
 export type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
   title: string;
-  variant?: 'primary' | 'secondary';
+  variant?: ButtonVariant;
   loading?: boolean;
+  /** Leading glyph, as on the mockup's "View details" / "Save report" buttons. */
+  icon?: keyof typeof Ionicons.glyphMap;
   style?: ViewStyle;
 };
 
@@ -21,13 +32,17 @@ export function Button({
   title,
   variant = 'primary',
   loading = false,
+  icon,
   disabled,
   style,
   ...rest
 }: ButtonProps) {
   const theme = useTheme();
   const isPrimary = variant === 'primary';
+  const isGhost = variant === 'ghost';
   const isDisabled = disabled || loading;
+
+  const ink = isPrimary ? theme.onPrimary : theme.primary;
 
   return (
     <Pressable
@@ -37,21 +52,23 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: isPrimary ? theme.primary : theme.backgroundElement,
-          borderColor: isPrimary ? theme.primary : theme.border,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
+          backgroundColor: isPrimary ? theme.primary : isGhost ? 'transparent' : theme.card,
+          borderColor: isGhost ? 'transparent' : theme.primary,
+          borderWidth: isPrimary ? 0 : isGhost ? 0 : 1.5,
+          opacity: isDisabled ? 0.45 : pressed ? 0.85 : 1,
         },
         style,
       ]}
       {...rest}>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? theme.onPrimary : theme.text} />
+        <ActivityIndicator color={ink} />
       ) : (
-        <ThemedText
-          style={[styles.label, { color: isPrimary ? theme.onPrimary : theme.text }]}
-          numberOfLines={1}>
-          {title}
-        </ThemedText>
+        <View style={styles.content}>
+          {!!icon && <Ionicons name={icon} size={16} color={ink} />}
+          <ThemedText type="button" style={{ color: ink }} numberOfLines={1}>
+            {title}
+          </ThemedText>
+        </View>
       )}
     </Pressable>
   );
@@ -59,15 +76,11 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
+    minHeight: Layout.controlHeight,
+    borderRadius: Radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  content: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
 });

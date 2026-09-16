@@ -1,10 +1,49 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+/**
+ * The type scale from `docs/neonutricare_ui_mockup.html`. Sizes are the mockup's
+ * values scaled up ~8%: the mockup renders inside a 340px phone frame, while the
+ * app renders at a real device's ~390dp width.
+ *
+ * Manrope (display) carries headings, numerals and button labels; Inter (body)
+ * carries everything else.
+ */
+export type TextType =
+  /** Splash wordmark — `.splash h1`. */
+  | 'display'
+  /** Page heading on a scrolling screen — `.screen h2`. */
+  | 'subtitle'
+  /** Heading inside a `.topbar`. */
+  | 'screenTitle'
+  /** Large numeral: `.metric .n`, `.gauge-txt .pct`. */
+  | 'metric'
+  /** Row / card heading — `.dcard .t`. */
+  | 'cardTitle'
+  /** Body copy — the mockup's 12.5–13px paragraph. */
+  | 'default'
+  /** Supporting copy — `.dcard .s`, `.metric .l`. */
+  | 'small'
+  | 'smallBold'
+  /** Field label — `.field label`. */
+  | 'label'
+  /** Section divider — `.grp-label`. */
+  | 'groupLabel'
+  /** Button label — `.btn`. */
+  | 'button'
+  /** Pill text — `.badge`. */
+  | 'badge'
+  | 'link'
+  | 'code'
+  /** Legacy alias for `display`. */
+  | 'title'
+  /** Legacy alias for `link`. */
+  | 'linkPrimary';
+
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: TextType;
   themeColor?: ThemeColor;
 };
 
@@ -15,14 +54,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
     <Text
       style={[
         { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
-        type === 'title' && styles.title,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
-        type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
-        type === 'code' && styles.code,
+        styles[type],
+        // `link` is the only type whose colour is part of its identity.
+        (type === 'link' || type === 'linkPrimary') && !themeColor && { color: theme.primary },
         style,
       ]}
       {...rest}
@@ -31,43 +65,26 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
+  display: { fontFamily: Fonts.displayHeavy, fontSize: 26, lineHeight: 32 },
+  title: { fontFamily: Fonts.displayHeavy, fontSize: 26, lineHeight: 32 },
+  subtitle: { fontFamily: Fonts.display, fontSize: 22, lineHeight: 28 },
+  screenTitle: { fontFamily: Fonts.display, fontSize: 18, lineHeight: 24 },
+  metric: { fontFamily: Fonts.displayHeavy, fontSize: 22, lineHeight: 28 },
+  cardTitle: { fontFamily: Fonts.bodyBold, fontSize: 15, lineHeight: 20 },
+  default: { fontFamily: Fonts.body, fontSize: 14, lineHeight: 21 },
+  small: { fontFamily: Fonts.body, fontSize: 13, lineHeight: 19 },
+  smallBold: { fontFamily: Fonts.bodyBold, fontSize: 14, lineHeight: 20 },
+  label: { fontFamily: Fonts.bodySemiBold, fontSize: 13, lineHeight: 18 },
+  groupLabel: {
+    fontFamily: Fonts.bodySemiBold,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
   },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
-  },
-  code: {
-    fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
-    fontSize: 12,
-  },
+  button: { fontFamily: Fonts.display, fontSize: 15, lineHeight: 20 },
+  badge: { fontFamily: Fonts.bodyBold, fontSize: 12, lineHeight: 16 },
+  link: { fontFamily: Fonts.bodySemiBold, fontSize: 13, lineHeight: 19 },
+  linkPrimary: { fontFamily: Fonts.bodySemiBold, fontSize: 13, lineHeight: 19 },
+  code: { fontFamily: Fonts.mono, fontSize: 12, lineHeight: 18 },
 });

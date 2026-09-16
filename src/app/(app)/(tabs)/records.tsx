@@ -1,19 +1,16 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
 import { Badge } from '@/components/ui/badge';
+import { ListCard } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, SkeletonList } from '@/components/ui/state-views';
-import { Spacing } from '@/constants/theme';
+import { Layout } from '@/constants/theme';
 import { useAsyncData } from '@/hooks/use-async-data';
-import { useTheme } from '@/hooks/use-theme';
 import { fetchPredictions, type PredictionRow } from '@/lib/predictions';
 
 export default function RecordsScreen() {
-  const theme = useTheme();
   const router = useRouter();
 
   const load = useCallback(() => fetchPredictions(), []);
@@ -32,7 +29,7 @@ export default function RecordsScreen() {
 
       {isEmpty && (
         <EmptyState
-          icon="document-text-outline"
+          icon="time-outline"
           title="No assessments yet"
           body="Run a screening and it will appear here with its date and result."
           actionTitle="Start a screening"
@@ -41,28 +38,16 @@ export default function RecordsScreen() {
       )}
 
       <View style={styles.list}>
-        {rows?.map((row) => (
-          <Pressable
+        {rows?.map((row, index) => (
+          <ListCard
             key={row.id}
-            accessibilityRole="button"
+            // Newest row carries the highest number, so the label is stable as
+            // long as nothing is deleted — the mockup's "Assessment #12".
+            title={`Assessment #${rows.length - index}`}
+            subtitle={`${formatDate(row.created_at)}${summarise(row)}`}
+            trailing={<Badge label={row.prediction} />}
             onPress={() => router.push({ pathname: '/record/[id]', params: { id: row.id } })}
-            style={({ pressed }) => [
-              styles.card,
-              {
-                backgroundColor: theme.backgroundElement,
-                borderColor: theme.border,
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}>
-            <View style={styles.cardText}>
-              <Badge label={row.prediction} />
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {formatDate(row.created_at)}
-                {summarise(row)}
-              </ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-          </Pressable>
+          />
         ))}
       </View>
     </Screen>
@@ -71,10 +56,7 @@ export default function RecordsScreen() {
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
-  return `${date.toLocaleDateString()} · ${date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })}`;
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function summarise(row: PredictionRow): string {
@@ -85,14 +67,5 @@ function summarise(row: PredictionRow): string {
 }
 
 const styles = StyleSheet.create({
-  list: { gap: Spacing.two },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  cardText: { flex: 1, gap: Spacing.one },
+  list: { gap: Layout.listGap },
 });

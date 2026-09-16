@@ -1,10 +1,13 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Badge } from '@/components/ui/badge';
+import { Card, useToneColors, type Tone } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, SkeletonList } from '@/components/ui/state-views';
-import { Spacing } from '@/constants/theme';
+import { Layout } from '@/constants/theme';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +18,32 @@ type Tip = {
   title: string | null;
   body: string;
 };
+
+/**
+ * The mockup labels each tip with a coloured category pill. Known categories get
+ * the glyph and tone it shows; anything else falls back to a stable colour
+ * picked from the category name, so a newly seeded category still looks native.
+ */
+const TONES: Tone[] = ['green', 'blue', 'amber', 'teal'];
+
+const CATEGORY_STYLE: Record<string, { tone: Tone; icon: keyof typeof Ionicons.glyphMap }> = {
+  nutrition: { tone: 'green', icon: 'leaf' },
+  hydration: { tone: 'blue', icon: 'water' },
+  iron: { tone: 'amber', icon: 'restaurant' },
+  anc: { tone: 'teal', icon: 'calendar' },
+  checkup: { tone: 'teal', icon: 'calendar' },
+  exercise: { tone: 'blue', icon: 'barbell' },
+  hygiene: { tone: 'teal', icon: 'sparkles' },
+};
+
+function categoryStyle(category: string) {
+  const key = Object.keys(CATEGORY_STYLE).find((word) => category.toLowerCase().includes(word));
+  if (key) return CATEGORY_STYLE[key];
+
+  let hash = 0;
+  for (let i = 0; i < category.length; i += 1) hash = (hash + category.charCodeAt(i)) % TONES.length;
+  return { tone: TONES[hash], icon: 'bulb' as keyof typeof Ionicons.glyphMap };
+}
 
 export default function TipsScreen() {
   const theme = useTheme();
@@ -31,14 +60,6 @@ export default function TipsScreen() {
   }, []);
 
   const { data: tips, error, loading, refreshing, refresh } = useAsyncData(load);
-
-  // Group by category so each heading appears once (PRD.md §5 screen 9).
-  const groups = new Map<string, Tip[]>();
-  for (const tip of tips ?? []) {
-    const existing = groups.get(tip.category);
-    if (existing) existing.push(tip);
-    else groups.set(tip.category, [tip]);
-  }
 
   return (
     <Screen
@@ -57,38 +78,30 @@ export default function TipsScreen() {
         />
       )}
 
-      {[...groups.entries()].map(([category, items]) => (
-        <View key={category} style={styles.group}>
-          <ThemedText type="small" style={[styles.category, { color: theme.primary }]}>
-            {category.toUpperCase()}
-          </ThemedText>
-
-          {items.map((tip) => (
-            <View
-              key={tip.id}
-              style={[
-                styles.card,
-                { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-              ]}>
-              {!!tip.title && <ThemedText type="smallBold">{tip.title}</ThemedText>}
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {tip.body}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      ))}
+      <View style={styles.list}>
+        {tips?.map((tip) => (
+          <TipCard key={tip.id} tip={tip} secondary={theme.textSecondary} />
+        ))}
+      </View>
     </Screen>
   );
 }
 
+function TipCard({ tip, secondary }: { tip: Tip; secondary: string }) {
+  const { tone, icon } = categoryStyle(tip.category);
+  const { fill, ink } = useToneColors(tone);
+
+  return (
+    <Card>
+      <Badge label={tip.category} icon={icon} tint={ink} fill={fill} />
+      {!!tip.title && <ThemedText type="cardTitle">{tip.title}</ThemedText>}
+      <ThemedText type="default" style={{ color: secondary }}>
+        {tip.body}
+      </ThemedText>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  group: { gap: Spacing.two },
-  category: { fontSize: 12, letterSpacing: 0.6 },
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.one,
-  },
+  list: { gap: Layout.cardGap },
 });

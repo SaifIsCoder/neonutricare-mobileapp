@@ -28,16 +28,66 @@ const BAND_LABEL: Record<ConfidenceBand, string> = {
   low: 'Low confidence',
 };
 
+const SIZE = 150;
+const THICKNESS = 12;
+
+/**
+ * Radial arc drawn from two clipped half-rings.
+ *
+ * A rounded View with only its top and right borders coloured renders a 180°
+ * arc; rotating it moves that arc's end to the target angle, and clipping to
+ * one half of the circle hides the other 180°. Two of them cover a full turn.
+ * This avoids pulling in a native SVG dependency, which would force an Android
+ * rebuild of the dev client.
+ */
+function Arc({ progress, color, track }: { progress: number; color: string; track: string }) {
+  const degrees = progress * 360;
+  const firstHalf = Math.min(degrees, 180);
+  const showSecondHalf = degrees > 180;
+
+  const ring = {
+    position: 'absolute' as const,
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    borderWidth: THICKNESS,
+    borderTopColor: color,
+    borderRightColor: color,
+    borderBottomColor: 'transparent',
+    borderLeftColor: 'transparent',
+  };
+
+  return (
+    <View style={styles.arc}>
+      <View
+        style={[
+          styles.track,
+          { borderColor: track, borderWidth: THICKNESS, borderRadius: SIZE / 2 },
+        ]}
+      />
+
+      {/* 0°–180°, clipped to the right half of the circle. */}
+      <View style={[styles.half, { left: SIZE / 2 }]}>
+        <View style={[ring, { left: -SIZE / 2, transform: [{ rotate: `${firstHalf - 135}deg` }] }]} />
+      </View>
+
+      {/* 180°–360°, clipped to the left half. */}
+      {showSecondHalf && (
+        <View style={[styles.half, { left: 0 }]}>
+          <View style={[ring, { left: 0, transform: [{ rotate: `${degrees - 135}deg` }] }]} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 export type ConfidenceGaugeProps = {
   /** Model confidence in [0, 1]. */
   value: number | null;
   tint: string;
 };
 
-/**
- * Horizontal bar rather than a radial dial: no SVG dependency, and it stays
- * legible at small sizes and in both themes.
- */
+/** `.gauge-wrap` — the 150px dial with the percentage stacked inside it. */
 export function ConfidenceGauge({ value, tint }: ConfidenceGaugeProps) {
   const theme = useTheme();
   const ratio = value === null ? 0 : Math.min(Math.max(value, 0), 1);
@@ -51,20 +101,21 @@ export function ConfidenceGauge({ value, tint }: ConfidenceGaugeProps) {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.header}>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          Confidence
-        </ThemedText>
-        <ThemedText style={[styles.value, { color: tint }]}>
-          {value === null ? '—' : `${percent}%`}
-        </ThemedText>
-      </View>
-
       <View
         accessibilityRole="progressbar"
+        accessibilityLabel="Model confidence"
         accessibilityValue={{ min: 0, max: 100, now: percent }}
-        style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
-        <View style={[styles.fill, { width: `${ratio * 100}%`, backgroundColor: tint }]} />
+        style={styles.gauge}>
+        <Arc progress={ratio} color={tint} track={theme.border} />
+
+        <View style={styles.gaugeText}>
+          <ThemedText type="metric" style={[styles.percent, { color: theme.primaryDark }]}>
+            {value === null ? '—' : `${percent}%`}
+          </ThemedText>
+          <ThemedText type="groupLabel" style={{ color: theme.textSecondary }}>
+            Confidence
+          </ThemedText>
+        </View>
       </View>
 
       {!!band && (
@@ -74,7 +125,7 @@ export function ConfidenceGauge({ value, tint }: ConfidenceGaugeProps) {
       )}
 
       {band === 'low' && (
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
+        <ThemedText type="small" style={[styles.note, { color: theme.textSecondary }]}>
           The model only slightly favours this outcome. Treat it as inconclusive and rely on
           clinical judgement.
         </ThemedText>
@@ -84,9 +135,12 @@ export function ConfidenceGauge({ value, tint }: ConfidenceGaugeProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { gap: Spacing.two },
-  header: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  value: { fontSize: 32, fontWeight: '700', lineHeight: 38 },
-  track: { height: 10, borderRadius: 5, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 5 },
+  wrapper: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
+  gauge: { width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' },
+  arc: { position: 'absolute', width: SIZE, height: SIZE },
+  track: { position: 'absolute', width: SIZE, height: SIZE },
+  half: { position: 'absolute', top: 0, width: SIZE / 2, height: SIZE, overflow: 'hidden' },
+  gaugeText: { alignItems: 'center', gap: Spacing.half },
+  percent: { fontSize: 30, lineHeight: 36 },
+  note: { textAlign: 'center', paddingHorizontal: Spacing.three },
 });

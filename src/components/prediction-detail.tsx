@@ -4,7 +4,8 @@ import { ConfidenceGauge } from '@/components/confidence-gauge';
 import { Disclaimer } from '@/components/disclaimer';
 import { ThemedText } from '@/components/themed-text';
 import { Badge, useLabelTint } from '@/components/ui/badge';
-import { Spacing } from '@/constants/theme';
+import { Card } from '@/components/ui/card';
+import { Layout, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { FIELDS } from '@/lib/prediction-form';
 import type { PredictionRow } from '@/lib/predictions';
@@ -16,47 +17,45 @@ export function PredictionDetail({ row }: { row: PredictionRow }) {
 
   return (
     <View style={styles.wrapper}>
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        ]}>
-        <Badge label={row.prediction} />
+      {/* `.gauge-wrap` — dial with the outcome pill directly beneath it. */}
+      <Card style={styles.gaugeCard}>
         <ConfidenceGauge value={row.confidence} tint={tint} />
-      </View>
+        <Badge label={row.prediction} style={styles.outcomeBadge} />
+      </Card>
 
       {!!row.recommendation && (
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          ]}>
-          <ThemedText type="smallBold">Recommendation</ThemedText>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+        <Card>
+          <ThemedText type="cardTitle">Personalised recommendations</ThemedText>
+          <ThemedText type="default" style={{ color: theme.textSecondary }}>
             {row.recommendation}
           </ThemedText>
-        </View>
+        </Card>
       )}
 
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        ]}>
+      <Card style={styles.answersCard}>
         {/* Labelled "answers", not "contributing factors": per-feature attribution
-            would need the model's own explanation, which the app does not have. */}
-        <ThemedText type="smallBold">Your answers</ThemedText>
-        {FIELDS.map((field) => (
-          <View key={field.key} style={styles.row}>
+            would need the model's own explanation, which the app does not have.
+            The mockup's `.factor-row` treatment is reused for the layout. */}
+        <ThemedText type="cardTitle" style={styles.answersTitle}>
+          Your answers
+        </ThemedText>
+
+        {FIELDS.map((field, index) => (
+          <View
+            key={field.key}
+            style={[
+              styles.row,
+              index < FIELDS.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
+            ]}>
             <ThemedText type="small" style={[styles.rowLabel, { color: theme.textSecondary }]}>
               {field.label}
             </ThemedText>
-            <ThemedText type="small" style={styles.rowValue}>
+            <ThemedText type="smallBold" style={styles.rowValue}>
               {formatValue(row, field.key)}
             </ThemedText>
           </View>
         ))}
-      </View>
+      </Card>
 
       <Disclaimer />
     </View>
@@ -75,14 +74,18 @@ function formatValue(row: PredictionRow, key: keyof PredictionRow | string): str
 }
 
 const styles = StyleSheet.create({
-  wrapper: { gap: Spacing.three },
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
+  wrapper: { gap: Layout.cardGap },
+  gaugeCard: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.three },
+  outcomeBadge: { alignSelf: 'center' },
+  answersCard: { gap: 0 },
+  answersTitle: { marginBottom: Spacing.one },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two + 1,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
   rowLabel: { flex: 1 },
   rowValue: { flexShrink: 0, textAlign: 'right', maxWidth: '50%' },
 });

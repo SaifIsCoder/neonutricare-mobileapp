@@ -24,6 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+try:
+    from rag_api import router as rag_router
+    app.include_router(rag_router)
+except ImportError as e:
+    print(f"Warning: Could not import rag_api router: {e}")
+
 # ---------------------------------------------------------------- model load
 # Loaded once at import, not per request. Paths are resolved relative to this
 # file so the service runs correctly from any working directory.

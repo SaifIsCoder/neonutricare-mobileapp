@@ -1,13 +1,20 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Layout, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 
@@ -63,11 +70,12 @@ export default function RegisterScreen() {
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag">
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
-              <ThemedText type="subtitle">Create account</ThemedText>
-              <ThemedText style={{ color: theme.textSecondary }}>
-                Your screenings stay private to you.
+              <ThemedText type="subtitle">Create your account</ThemedText>
+              <ThemedText type="default" style={{ color: theme.textSecondary }}>
+                Takes less than a minute, and your screenings stay private to you.
               </ThemedText>
             </View>
 
@@ -76,7 +84,7 @@ export default function RegisterScreen() {
                 label="Full name"
                 value={fullName}
                 onChangeText={setFullName}
-                placeholder="Amina Yusuf"
+                placeholder="Your full name"
                 autoCapitalize="words"
                 autoComplete="name"
                 textContentType="name"
@@ -88,7 +96,7 @@ export default function RegisterScreen() {
                 label="Email"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@example.com"
+                placeholder="name@email.com"
                 autoCapitalize="none"
                 autoComplete="email"
                 keyboardType="email-address"
@@ -118,9 +126,9 @@ export default function RegisterScreen() {
                 </ThemedText>
               )}
 
-              <Button title="Create account" onPress={onSubmit} loading={submitting} />
+              <Button title="Sign up" onPress={onSubmit} loading={submitting} style={styles.submit} />
 
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              <ThemedText type="small" style={{ color: theme.textMuted }}>
                 NeoNutriCare provides a screening indication, not a diagnosis. Always consult a
                 qualified health provider.
               </ThemedText>
@@ -128,14 +136,14 @@ export default function RegisterScreen() {
 
             <View style={styles.footer}>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Already registered?
+                Already have an account?{' '}
               </ThemedText>
-              <Button
-                title="Sign in instead"
-                variant="secondary"
-                onPress={() => router.replace('/login')}
+              <Pressable
+                accessibilityRole="link"
                 disabled={submitting}
-              />
+                onPress={() => router.replace('/login')}>
+                <ThemedText type="link">Log in</ThemedText>
+              </Pressable>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -152,11 +160,18 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
-    gap: Spacing.five,
+    paddingHorizontal: Layout.screenPaddingX,
+    paddingTop: Spacing.five + 8,
+    paddingBottom: Spacing.four,
   },
-  header: { gap: Spacing.two, paddingTop: Spacing.four },
-  form: { gap: Spacing.three },
-  footer: { marginTop: 'auto', gap: Spacing.two, alignItems: 'stretch' },
+  header: { gap: Spacing.one, marginBottom: Spacing.four },
+  form: { gap: Layout.fieldGap },
+  submit: { marginTop: Spacing.two },
+  footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.four,
+  },
 });

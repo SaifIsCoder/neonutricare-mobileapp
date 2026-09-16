@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Layout, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Choice } from '@/lib/prediction-form';
 
@@ -22,6 +22,9 @@ export type SelectProps = {
  * Dropdown built on a Modal sheet rather than a native picker: the options are
  * always two short labels, and this keeps one look across iOS, Android and web
  * without another dependency.
+ *
+ * The trigger matches `.field select` in the mockup; the sheet re-uses the same
+ * card surface, radii and border so it reads as part of the same system.
  */
 export function Select({
   label,
@@ -39,7 +42,9 @@ export function Select({
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="label" style={{ color: theme.textSecondary }}>
+        {label}
+      </ThemedText>
 
       <Pressable
         accessibilityRole="button"
@@ -51,17 +56,18 @@ export function Select({
         style={({ pressed }) => [
           styles.trigger,
           {
-            backgroundColor: theme.backgroundElement,
-            borderColor: error ? theme.danger : theme.border,
+            backgroundColor: theme.card,
+            borderColor: error ? theme.danger : open ? theme.primary : theme.border,
+            borderWidth: error || open ? 1.5 : 1,
             opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
           },
         ]}>
         <ThemedText
-          style={[styles.triggerText, !selected && { color: theme.textSecondary }]}
+          style={[styles.triggerText, { color: selected ? theme.text : theme.textMuted }]}
           numberOfLines={1}>
           {selected?.label ?? placeholder}
         </ThemedText>
-        <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
+        <Ionicons name="chevron-down" size={16} color={theme.textMuted} />
       </Pressable>
 
       {!!error && (
@@ -70,20 +76,18 @@ export function Select({
         </ThemedText>
       )}
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable
           style={styles.backdrop}
           accessibilityLabel="Close"
           onPress={() => setOpen(false)}>
           {/* Swallow taps on the sheet itself so they don't close the modal. */}
           <Pressable
-            style={[styles.sheet, { backgroundColor: theme.background, borderColor: theme.border }]}
+            style={[styles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}
             onPress={() => {}}>
-            <ThemedText type="smallBold" style={styles.sheetTitle}>
+            <View style={[styles.grabber, { backgroundColor: theme.border }]} />
+
+            <ThemedText type="screenTitle" style={styles.sheetTitle}>
               {label}
             </ThemedText>
 
@@ -103,13 +107,17 @@ export function Select({
                       styles.option,
                       {
                         backgroundColor: isSelected
-                          ? theme.backgroundSelected
+                          ? theme.primaryLight
                           : pressed
-                            ? theme.backgroundElement
+                            ? theme.backgroundSelected
                             : 'transparent',
                       },
                     ]}>
-                    <ThemedText style={styles.optionText}>{choice.label}</ThemedText>
+                    <ThemedText
+                      type={isSelected ? 'smallBold' : 'default'}
+                      style={styles.optionText}>
+                      {choice.label}
+                    </ThemedText>
                     {isSelected && <Ionicons name="checkmark" size={18} color={theme.primary} />}
                   </Pressable>
                 );
@@ -123,20 +131,20 @@ export function Select({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { gap: Spacing.one },
+  wrapper: { gap: Spacing.one + 1 },
   trigger: {
-    minHeight: 52,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
+    minHeight: Layout.controlHeight - 4,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three - 4,
+    paddingVertical: Spacing.two + 3,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  triggerText: { flex: 1, fontSize: 16 },
+  triggerText: { flex: 1, fontSize: 14 },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(14, 36, 34, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -144,21 +152,23 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     maxHeight: '60%',
-    borderTopLeftRadius: Spacing.four,
-    borderTopRightRadius: Spacing.four,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
+    borderTopLeftRadius: Radius.xxl,
+    borderTopRightRadius: Radius.xxl,
+    borderWidth: 1,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.four,
+    paddingHorizontal: Layout.cardPadding,
     gap: Spacing.two,
   },
-  sheetTitle: { paddingHorizontal: Spacing.two },
+  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: Spacing.one },
+  sheetTitle: { paddingHorizontal: Spacing.two, marginBottom: Spacing.one },
   option: {
-    minHeight: 52,
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.two,
+    minHeight: 48,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three - 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  optionText: { flex: 1, fontSize: 16 },
+  optionText: { flex: 1 },
 });

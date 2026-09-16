@@ -1,14 +1,14 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { Card, ListCard, SectionLabel } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { ErrorState, SkeletonCard } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
-import { Spacing } from '@/constants/theme';
+import { Layout, Radius, Spacing } from '@/constants/theme';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
@@ -103,27 +103,21 @@ export default function ProfileScreen() {
         <View style={styles.identity}>
           {/* Initials stand in for an uploaded avatar. Real image upload needs
               expo-image-picker plus the `avatars` bucket (supabase/schema.sql §6). */}
-          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <ThemedText style={[styles.avatarText, { color: theme.onPrimary }]}>
+          <View style={[styles.avatar, { backgroundColor: theme.primaryLight }]}>
+            <ThemedText type="subtitle" style={{ color: theme.primaryDark }}>
               {displayName.charAt(0).toUpperCase()}
             </ThemedText>
           </View>
 
-          <View style={styles.identityText}>
-            <ThemedText type="smallBold">{displayName}</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }} numberOfLines={1}>
-              {email}
-            </ThemedText>
-          </View>
+          <ThemedText type="cardTitle">{displayName}</ThemedText>
+          <ThemedText type="small" style={{ color: theme.textSecondary }} numberOfLines={1}>
+            {email}
+          </ThemedText>
         </View>
       )}
 
-      {editing ? (
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          ]}>
+      {editing && (
+        <Card>
           <TextField
             label="Full name"
             value={draftName}
@@ -134,29 +128,53 @@ export default function ProfileScreen() {
           <View style={styles.editActions}>
             <Button
               title="Cancel"
-              variant="secondary"
+              variant="outline"
               onPress={() => setEditing(false)}
               disabled={saving}
               style={styles.editButton}
             />
             <Button title="Save" onPress={saveName} loading={saving} style={styles.editButton} />
           </View>
-        </View>
-      ) : (
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          ]}>
-          <Row label="Name" value={profile?.full_name?.trim() || '—'} />
-          <Row label="Email" value={email} />
-          <Row
-            label="Member since"
-            value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '—'}
-          />
-          <Button title="Edit profile" variant="secondary" onPress={startEditing} />
-        </View>
+        </Card>
       )}
+
+      <SectionLabel>Account</SectionLabel>
+
+      <View style={styles.list}>
+        {!editing && (
+          <ListCard
+            icon="pencil"
+            tone="teal"
+            title="Edit profile"
+            subtitle={
+              profile?.created_at
+                ? `Member since ${new Date(profile.created_at).toLocaleDateString(undefined, {
+                    month: 'short',
+                    year: 'numeric',
+                  })}`
+                : 'Update your display name'
+            }
+            onPress={startEditing}
+          />
+        )}
+
+        <ListCard
+          icon="woman"
+          tone="blue"
+          title="Maternal support"
+          subtitle="Pregnancy, nutrition and checkup guides"
+          onPress={() => router.push('/maternal')}
+        />
+
+        <ListCard
+          icon="chatbubbles"
+          tone="muted"
+          title="AI health assistant"
+          subtitle="Coming soon"
+          muted
+          onPress={() => router.push('/assistant')}
+        />
+      </View>
 
       {!loading && !error && profile === null && (
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
@@ -165,106 +183,44 @@ export default function ProfileScreen() {
         </ThemedText>
       )}
 
-      <View style={styles.links}>
-        <LinkRow
-          icon="heart-outline"
-          title="Maternal support"
-          onPress={() => router.push('/maternal')}
-        />
-        <LinkRow
-          icon="chatbubbles-outline"
-          title="AI assistant"
-          onPress={() => router.push('/assistant')}
-        />
-      </View>
+      <SectionLabel>About</SectionLabel>
 
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        ]}>
-        <ThemedText type="smallBold">About NeoNutriCare</ThemedText>
+      <Card>
+        <ThemedText type="cardTitle">About NeoNutriCare</ThemedText>
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
           AI-assisted newborn malnutrition risk screening and maternal support. Results are a
           screening indication, not a diagnosis — always consult a qualified health provider.
         </ThemedText>
-      </View>
+      </Card>
 
-      <Button title="Log out" variant="secondary" onPress={onSignOut} loading={signingOut} />
+      <ListCard
+        icon="log-out"
+        tone="amber"
+        title="Logout"
+        subtitle={email}
+        onPress={signingOut ? undefined : onSignOut}
+        trailing={signingOut ? <ActivityIndicator color={theme.warning} /> : undefined}
+      />
     </Screen>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  const theme = useTheme();
-
-  return (
-    <View style={styles.row}>
-      <ThemedText type="small" style={{ color: theme.textSecondary }}>
-        {label}
-      </ThemedText>
-      <ThemedText type="smallBold" style={styles.rowValue} numberOfLines={1}>
-        {value}
-      </ThemedText>
-    </View>
-  );
-}
-
-function LinkRow({
-  icon,
-  title,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.linkRow,
-        {
-          backgroundColor: theme.backgroundElement,
-          borderColor: theme.border,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}>
-      <Ionicons name={icon} size={20} color={theme.primary} />
-      <ThemedText type="small" style={styles.linkTitle}>
-        {title}
-      </ThemedText>
-      <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  identity: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  avatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
-  identityText: { flex: 1, gap: Spacing.half },
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.two,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
-  rowValue: { flexShrink: 1, textAlign: 'right' },
-  editActions: { flexDirection: 'row', gap: Spacing.two },
-  editButton: { flex: 1 },
-  links: { gap: Spacing.two },
-  linkRow: {
-    flexDirection: 'row',
+  identity: {
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.half,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
   },
-  linkTitle: { flex: 1 },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.xxl - 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.two,
+  },
+  editActions: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
+  editButton: { flex: 1 },
+  list: { gap: Layout.listGap },
 });

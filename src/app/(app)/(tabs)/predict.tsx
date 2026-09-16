@@ -9,14 +9,9 @@ import { Screen } from '@/components/ui/screen';
 import { Select } from '@/components/ui/select';
 import { ErrorState } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
-import { Spacing } from '@/constants/theme';
+import { Layout, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  FIELDS,
-  validate,
-  type FormValues,
-  type ValidationErrors,
-} from '@/lib/prediction-form';
+import { FIELDS, validate, type FormValues, type ValidationErrors } from '@/lib/prediction-form';
 import { PredictionError, submitAssessment } from '@/lib/predictions';
 
 export default function PredictScreen() {
@@ -64,13 +59,32 @@ export default function PredictScreen() {
     }
   }
 
-  const missingCount = FIELDS.filter((field) => !values[field.key]).length;
+  const answered = FIELDS.filter((field) => !!values[field.key]).length;
+  const progress = answered / FIELDS.length;
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen title="Risk screening" subtitle={`${FIELDS.length} questions about this pregnancy`}>
+      <Screen
+        title="Risk prediction"
+        subtitle={`All ${FIELDS.length} answers below feed the trained model directly.`}>
+        {/* Completion meter — the mockup has no equivalent, so it is drawn with
+            the same track/fill treatment as the result screen's factor bars. */}
+        <View style={styles.progress}>
+          <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progress * 100}%`, backgroundColor: theme.primary },
+              ]}
+            />
+          </View>
+          <ThemedText type="label" style={{ color: theme.textSecondary }}>
+            {answered}/{FIELDS.length}
+          </ThemedText>
+        </View>
+
         {!!submitError && (
           <ErrorState message={submitError} onRetry={canRetry ? onSubmit : undefined} />
         )}
@@ -103,14 +117,9 @@ export default function PredictScreen() {
           )}
         </View>
 
-        {missingCount > 0 && (
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {missingCount} of {FIELDS.length} still to answer.
-          </ThemedText>
-        )}
-
         <Button
-          title="Run screening"
+          title="Predict risk"
+          icon="sparkles"
           onPress={onSubmit}
           loading={submitting}
           style={styles.submit}
@@ -124,6 +133,9 @@ export default function PredictScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  form: { gap: Spacing.three },
+  progress: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2 },
+  progressTrack: { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
+  form: { gap: Layout.fieldGap },
   submit: { marginTop: Spacing.one },
 });

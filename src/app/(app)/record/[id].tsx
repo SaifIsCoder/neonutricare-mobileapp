@@ -18,7 +18,16 @@ export default function RecordDetailScreen() {
   return (
     <Screen
       title="Assessment"
-      subtitle={created ? `${created.toLocaleDateString()} · ${created.toLocaleTimeString()}` : ''}
+      subtitle={
+        created
+          ? `${created.toLocaleDateString(undefined, {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })} · ${created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+          : undefined
+      }
+      showBack
       onRefresh={refresh}
       refreshing={refreshing}>
       {!!error && <ErrorState message={error} onRetry={refresh} />}
@@ -26,7 +35,7 @@ export default function RecordDetailScreen() {
 
       {!loading && !error && !row && (
         <EmptyState
-          icon="help-circle-outline"
+          icon="help-circle"
           title="Assessment not found"
           body="This record no longer exists, or belongs to another account."
         />

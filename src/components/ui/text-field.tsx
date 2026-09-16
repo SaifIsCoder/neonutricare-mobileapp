@@ -1,8 +1,8 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Layout, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextFieldProps = TextInputProps & {
@@ -11,30 +11,45 @@ export type TextFieldProps = TextInputProps & {
   error?: string;
 };
 
-export function TextField({ label, error, style, ...rest }: TextFieldProps) {
+/** `.field` — 13px semibold label over a white, 12px-radius input. */
+export function TextField({ label, error, style, onFocus, onBlur, ...rest }: TextFieldProps) {
   const theme = useTheme();
   const id = useId();
+  const [focused, setFocused] = useState(false);
+
+  const borderColor = error ? theme.danger : focused ? theme.primary : theme.border;
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="smallBold" nativeID={id}>
+      <ThemedText type="label" nativeID={id} style={{ color: theme.textSecondary }}>
         {label}
       </ThemedText>
+
       <TextInput
         accessibilityLabel={label}
         accessibilityLabelledBy={id}
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={theme.textMuted}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
         style={[
           styles.input,
           {
-            backgroundColor: theme.backgroundElement,
-            borderColor: error ? theme.danger : theme.border,
+            backgroundColor: theme.card,
+            borderColor,
+            borderWidth: focused || error ? 1.5 : 1,
             color: theme.text,
           },
           style,
         ]}
         {...rest}
       />
+
       {!!error && (
         <ThemedText type="small" style={{ color: theme.danger }}>
           {error}
@@ -45,14 +60,13 @@ export function TextField({ label, error, style, ...rest }: TextFieldProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    gap: Spacing.one,
-  },
+  wrapper: { gap: Spacing.one + 1 },
   input: {
-    minHeight: 52,
-    borderRadius: Spacing.three,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.three,
-    fontSize: 16,
+    minHeight: Layout.controlHeight - 4,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three - 4,
+    paddingVertical: Spacing.two + 3,
+    fontFamily: Fonts.body,
+    fontSize: 14,
   },
 });

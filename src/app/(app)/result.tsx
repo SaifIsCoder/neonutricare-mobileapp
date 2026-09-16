@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 import { PredictionDetail } from '@/components/prediction-detail';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
 import { EmptyState, ErrorState, SkeletonCard } from '@/components/ui/state-views';
 import { Spacing } from '@/constants/theme';
@@ -21,13 +22,13 @@ export default function ResultScreen() {
   const { data: row, error, loading, refresh } = useAsyncData(load);
 
   return (
-    <Screen title="Screening complete" subtitle="Saved to your health records">
+    <Screen title="Prediction result" subtitle="Saved to your health records">
       {!!error && <ErrorState message={error} onRetry={refresh} />}
       {loading && !error && <SkeletonCard lines={4} />}
 
       {!loading && !error && !row && (
         <EmptyState
-          icon="help-circle-outline"
+          icon="help-circle"
           title="Assessment not found"
           body="It may have been deleted. Check your health records."
         />
@@ -37,10 +38,12 @@ export default function ResultScreen() {
         <>
           {/* Rows saved before the service was wired up carry this placeholder. */}
           {row.prediction === 'Pending' && (
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              This assessment was saved before the prediction service was connected, so it has
-              no result. Run a new screening to get one.
-            </ThemedText>
+            <Card>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                This assessment was saved before the prediction service was connected, so it has no
+                result. Run a new screening to get one.
+              </ThemedText>
+            </Card>
           )}
 
           <PredictionDetail row={row} />
@@ -49,6 +52,7 @@ export default function ResultScreen() {
 
       <Button
         title="Done"
+        icon="checkmark-circle"
         onPress={() => router.replace('/records')}
         style={styles.done}
       />

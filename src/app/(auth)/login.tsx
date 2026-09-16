@@ -1,13 +1,21 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Layout, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 
@@ -49,11 +57,16 @@ export default function LoginScreen() {
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag">
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}>
+            <View style={[styles.brand, { backgroundColor: theme.primaryLight }]}>
+              <Ionicons name="fitness" size={24} color={theme.primary} />
+            </View>
+
             <View style={styles.header}>
               <ThemedText type="subtitle">Welcome back</ThemedText>
-              <ThemedText style={{ color: theme.textSecondary }}>
-                Sign in to continue your screenings.
+              <ThemedText type="default" style={{ color: theme.textSecondary }}>
+                Log in to continue your care journey.
               </ThemedText>
             </View>
 
@@ -62,7 +75,7 @@ export default function LoginScreen() {
                 label="Email"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@example.com"
+                placeholder="name@email.com"
                 autoCapitalize="none"
                 autoComplete="email"
                 keyboardType="email-address"
@@ -74,7 +87,7 @@ export default function LoginScreen() {
                 label="Password"
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Your password"
+                placeholder="••••••••"
                 secureTextEntry
                 autoCapitalize="none"
                 autoComplete="current-password"
@@ -90,19 +103,19 @@ export default function LoginScreen() {
                 </ThemedText>
               )}
 
-              <Button title="Sign in" onPress={onSubmit} loading={submitting} />
+              <Button title="Log in" onPress={onSubmit} loading={submitting} style={styles.submit} />
             </View>
 
             <View style={styles.footer}>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                New to NeoNutriCare?
+                Don&apos;t have an account?{' '}
               </ThemedText>
-              <Button
-                title="Create an account"
-                variant="secondary"
-                onPress={() => router.replace('/register')}
+              <Pressable
+                accessibilityRole="link"
                 disabled={submitting}
-              />
+                onPress={() => router.replace('/register')}>
+                <ThemedText type="link">Sign up</ThemedText>
+              </Pressable>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -119,11 +132,26 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
-    gap: Spacing.five,
+    paddingHorizontal: Layout.screenPaddingX,
+    paddingTop: Spacing.five + 8,
+    paddingBottom: Spacing.four,
   },
-  header: { gap: Spacing.two, paddingTop: Spacing.four },
-  form: { gap: Spacing.three },
-  footer: { marginTop: 'auto', gap: Spacing.two, alignItems: 'stretch' },
+  brand: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.three,
+  },
+  header: { gap: Spacing.one, marginBottom: Spacing.four },
+  form: { gap: Layout.fieldGap },
+  submit: { marginTop: Spacing.two },
+  footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.four,
+  },
 });
