@@ -47,19 +47,19 @@ def test_predict():
     print("\nTesting /predict")
     payload = {
         "age": "A",
-        "address": "Urban",
-        "weight_gain": "Adequate",
-        "education": "Secondary",
-        "occupation": "Employed",
-        "family_type": "Nuclear",
-        "parity": "1",
-        "living_with_husband": "Yes",
-        "booked": "Yes",
+        "address": "U",
+        "weight_gain": "A",
+        "education": "E",
+        "occupation": "E",
+        "family_type": "S",
+        "parity": "G",
+        "living_with_husband": "Y",
+        "booked": "B",
         "antenatal_visits": 4,
         "hemoglobin": 12.0,
-        "iron_injection": "No",
-        "pre_eclampsia": "No",
-        "infection": "No"
+        "iron_injection": "NO",
+        "pre_eclampsia": "NO",
+        "infection": "NO"
     }
     try:
         r = requests.post(PREDICT_URL, json=payload)
