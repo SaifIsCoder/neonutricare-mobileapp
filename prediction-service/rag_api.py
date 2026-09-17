@@ -600,19 +600,20 @@ def ask(request: AskRequest):
 
     sources = []
 
-    for rank, result in enumerate(
-        results,
-        start=1
-    ):
-        sources.append({
-            "rank": rank,
-            "source": result["source"],
-            "chunk": result["chunk_index"],
-            "similarity": round(
-                result["score"],
-                4
-            )
-        })
+    if "The retrieved WHO sources do not provide enough information" not in answer:
+        for rank, result in enumerate(
+            results,
+            start=1
+        ):
+            sources.append({
+                "rank": rank,
+                "source": result["source"],
+                "chunk": result["chunk_index"],
+                "similarity": round(
+                    result["score"],
+                    4
+                )
+            })
 
     return {
         "question": question,
