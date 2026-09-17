@@ -1,56 +1,83 @@
-# Welcome to your Expo app 👋
+# NeoNutriCare 🍼
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**NeoNutriCare** is a comprehensive mobile application designed to support maternal health and screen for newborn malnutrition risk using Machine Learning and AI. 
 
-## Get started
+In low-resource settings, early identification of malnutrition risks during pregnancy can be life-saving. NeoNutriCare provides a low-friction screening tool and trustworthy, evidence-based maternal guidance right in the hands of mothers, caregivers, and community health workers.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🌟 Core Features
 
-2. Start the app
+- **ML Risk Assessment:** Users fill out a 14-point clinical and maternal form which is processed by a trained Random Forest model. The app instantly returns a risk label, a confidence score, and plain-language recommendations.
+- **Evidence-Based AI Assistant:** An integrated AI Health Assistant that strictly answers questions based on WHO maternal-health guidelines using a custom Retrieval-Augmented Generation (RAG) pipeline powered by Gemini.
+- **Maternal Support Content:** Static, categorized health tips and pregnancy guides to provide ongoing support.
+- **History Tracking:** Securely persists every assessment so users can track their health history over time.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🏗️ Architecture & Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+NeoNutriCare is built using modern mobile development and scalable backend architecture:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Mobile App (Frontend)
+- **Framework:** React Native built with Expo (SDK 57).
+- **Language:** Strict TypeScript.
+- **Routing:** Expo Router (file-based routing).
 
-## Get a fresh project
+### Backend & Database (BaaS)
+- **Supabase:** Handles secure Authentication, PostgreSQL Database, Storage, and Row Level Security (RLS) to ensure users can only access their own medical data.
 
-When you're ready, run:
+### Machine Learning Service (Backend)
+- **Framework:** Python FastAPI.
+- **Model:** `scikit-learn` Random Forest `.pkl` model.
+- **Endpoint:** Exposes the `POST /predict` endpoint to process maternal data.
 
+### AI Pipeline
+- **RAG Architecture:** Google's Gemini API handles vector embeddings and citation-aware text generation. The AI is strictly prompt-engineered to provide plain text, WHO-compliant advice.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js (v18+)
+- Python (v3.10+)
+- Expo CLI
+- A Supabase project
+- A Gemini API Key
+
+### 2. Mobile App Setup
 ```bash
-npm run reset-project
+# Install dependencies
+npm install
+
+# Start the Expo development server
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. Prediction Service Setup
+Navigate to the `prediction-service` directory:
+```bash
+# Create a virtual environment
+python -m venv venv
+# Activate the virtual environment (Windows)
+venv\Scripts\activate
+# Install requirements
+pip install -r requirements.txt
 
-### Other setup steps
+# Set up environment variables
+# Create a .env file and add your GEMINI_API_KEY
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+# Start the FastAPI server
+uvicorn app:app --reload
+```
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## ⚠️ Medical Disclaimer
+NeoNutriCare is a **screening and decision-support tool, not a diagnosis.** Every result screen and report advises the user to consult a qualified healthcare provider. The model output should never be presented as clinical certainty.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📄 License
+See the `LICENSE` file for details.
