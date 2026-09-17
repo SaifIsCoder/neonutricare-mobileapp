@@ -355,7 +355,7 @@ ANSWER STYLE
 
 28. Keep the answer concise, clear, and clinically precise.
 
-29. Use short headings and bullet points only when they improve clarity.
+29. Do NOT use any Markdown formatting. Specifically, do NOT use asterisks (*) for bold/italics or bullet points, and do NOT use hash symbols (#) for headings. Provide the response as plain text.
 
 30. Do not add unrelated background information.
 
@@ -365,7 +365,7 @@ ANSWER STYLE
 
 32. Do not repeat the same factual claim.
 
-33. Do not use markdown tables.
+33. Do NOT use markdown tables or any markdown syntax.
 
 34. Do not mention that you are an AI.
 
