@@ -19,10 +19,6 @@ type Guide = {
   body: string | null;
 };
 
-/**
- * Seeded icon names are Font Awesome-ish; map them onto Ionicons plus the tint
- * the mockup gives each guide (teal, green, blue, amber in seed order).
- */
 const GUIDE_STYLE: Record<string, { icon: keyof typeof Ionicons.glyphMap; tone: Tone }> = {
   baby: { icon: 'body', tone: 'teal' },
   carrot: { icon: 'nutrition', tone: 'green' },

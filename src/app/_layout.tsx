@@ -12,6 +12,7 @@ import {
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -61,6 +62,16 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  // Ping the backend API on startup to wake it up from sleep (Render free tier).
+  useEffect(() => {
+    // We import RAG_API_URL dynamically or from lib
+    // Actually, let's just use a simple fetch to the env var directly
+    const url = process.env.EXPO_PUBLIC_PREDICTION_API_URL;
+    if (url) {
+      fetch(`${url}/health`).catch(() => {});
+    }
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? navigationTheme.dark : navigationTheme.light}>

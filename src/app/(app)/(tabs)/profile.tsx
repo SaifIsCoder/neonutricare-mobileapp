@@ -168,10 +168,9 @@ export default function ProfileScreen() {
 
         <ListCard
           icon="chatbubbles"
-          tone="muted"
+          tone="teal"
           title="AI health assistant"
-          subtitle="Coming soon"
-          muted
+          subtitle="Chat with our health assistant"
           onPress={() => router.push('/assistant')}
         />
       </View>

@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Layout.screenPaddingX,
-    paddingVertical: Spacing.two,
+    paddingVertical: Spacing.four,
     gap: Spacing.two,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
