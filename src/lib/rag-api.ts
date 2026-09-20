@@ -32,19 +32,42 @@ export function resolveApiUrl(raw: string | undefined): string | undefined {
   return base;
 }
 
-export const RAG_API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_RAG_API_URL);
+export const RAG_API_URL = resolveApiUrl(
+  process.env.EXPO_PUBLIC_RAG_API_URL || process.env.EXPO_PUBLIC_PREDICTION_API_URL
+);
+
+const TIMEOUT_MS = 50_000;
 
 /** POST /ask */
 export async function askRag(question: string): Promise<AskResponse> {
   if (!RAG_API_URL) {
-    throw new Error('No RAG service configured. Set EXPO_PUBLIC_RAG_API_URL in .env');
+    throw new Error('No RAG service configured. Set EXPO_PUBLIC_PREDICTION_API_URL or EXPO_PUBLIC_RAG_API_URL in .env');
   }
 
-  const response = await fetch(`${RAG_API_URL}/ask`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
-  });
+  console.log('Sending request to RAG_API_URL:', RAG_API_URL);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${RAG_API_URL}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const aborted = controller.signal.aborted;
+    console.error('RAG API network error:', err);
+    throw new Error(
+      aborted 
+        ? `The RAG service did not respond within ${TIMEOUT_MS / 1000} seconds. Please try again.` 
+        : `Could not reach the RAG service at ${RAG_API_URL}.`
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     throw new Error(`RAG API returned an error (${response.status})`);

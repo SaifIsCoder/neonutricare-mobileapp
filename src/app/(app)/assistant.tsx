@@ -67,13 +67,15 @@ export default function AssistantScreen() {
           sources: data.sources,
         },
       ]);
-    } catch {
+    } catch (e) {
+      console.error('Assistant error:', e);
+      const errorMessage = e instanceof Error ? e.message : String(e);
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'Unable to connect to the WHO Assistant. Please try again.',
+          content: `Unable to connect to the WHO Assistant. Please try again. (${errorMessage})`,
         },
       ]);
     } finally {
@@ -95,30 +97,6 @@ export default function AssistantScreen() {
           <ThemedText style={{ color: isUser ? theme.onPrimary : theme.text }}>
             {item.content}
           </ThemedText>
-          
-          {!!item.sources && item.sources.length > 0 && (
-            <View style={[styles.sourcesContainer, { borderTopColor: theme.border }]}>
-              <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.one }}>
-                Sources:
-              </ThemedText>
-              {item.sources.map((src, idx) => (
-                <View key={idx} style={styles.sourceItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    [Source {src.rank}]
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Document: {src.source}
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Chunk: {src.chunk}
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Similarity: {(src.similarity * 100).toFixed(2)}%
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
       </View>
     );
@@ -236,15 +214,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two + 2,
     borderRadius: Radius.lg,
     maxWidth: '100%',
-  },
-  sourcesContainer: {
-    marginTop: Spacing.two,
-    paddingTop: Spacing.two,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  sourceItem: {
-    marginTop: Spacing.one,
-    paddingBottom: Spacing.one,
   },
   inputArea: {
     flexDirection: 'row',
