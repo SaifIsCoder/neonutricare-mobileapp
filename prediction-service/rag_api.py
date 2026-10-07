@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 import json
@@ -575,3 +576,166 @@ def ask(request: AskRequest):
         "answer": answer,
         "sources": sources
     }
+
+
+# ==============================================================
+# PERSONALIZED HEALTH TIPS
+# ==============================================================
+
+class PersonalizedTipsRequest(BaseModel):
+    hemoglobin: Optional[float] = None
+    pre_eclampsia: Optional[bool] = None
+    iron_injection: Optional[bool] = None
+    infection: Optional[bool] = None
+    weight_gain: Optional[str] = None
+    antenatal_visits: Optional[int] = None
+    booked: Optional[bool] = None
+    parity: Optional[str] = None
+    age: Optional[str] = None
+    prediction: Optional[str] = None
+
+
+def generate_personalized_tips(req: PersonalizedTipsRequest):
+    if client is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Server misconfiguration: GEMINI_API_KEY is missing.")
+
+    queries = []
+
+    # 1. Anemia & Iron risk
+    if (req.hemoglobin is not None and req.hemoglobin < 11.0) or req.iron_injection is True:
+        queries.append("WHO recommendations on maternal anemia oral iron and folic acid supplementation dose food sources")
+
+    # 2. Pre-eclampsia & Hypertension risk
+    if req.pre_eclampsia is True:
+        queries.append("WHO recommendations on pre-eclampsia calcium supplementation prevention and danger signs")
+
+    # 3. Nutrition & Weight Gain risk
+    if req.weight_gain in ["<10 kg", "Less than 10 kg"] or req.prediction == "At Risk":
+        queries.append("WHO recommendations on maternal nutrition dietary diversity energy and protein intake during pregnancy")
+
+    # 4. Antenatal Care checkups
+    if (req.antenatal_visits is not None and req.antenatal_visits < 8) or req.booked is False:
+        queries.append("WHO antenatal care model 8 contacts schedule routine health checks pregnancy")
+
+    # 5. Parity & Maternal Support
+    if req.parity == "Primigravida":
+        queries.append("WHO recommendations for primigravida maternal guidance rest breastfeeding preparation")
+    elif req.parity == "Multigravida":
+        queries.append("WHO recommendations for multiparous women maternal nutrition birth spacing recovery")
+
+    # Fallback general maternal nutrition
+    if len(queries) < 2:
+        queries.append("WHO guidelines maternal healthy diet hydration leafy vegetables iron and folate rich foods")
+        queries.append("WHO maternal health antenatal physical activity rest and danger signs")
+
+    all_chunks = []
+    seen_ids = set()
+
+    for q in queries[:3]:
+        try:
+            chunks = retrieve(q, top_k=2)
+            for c in chunks:
+                if c["chunk_id"] not in seen_ids:
+                    seen_ids.add(c["chunk_id"])
+                    all_chunks.append(c)
+        except Exception as e:
+            print(f"Retrieval error for '{q}': {e}")
+
+    if not all_chunks:
+        all_chunks = retrieve("WHO maternal health nutrition antenatal guidelines", top_k=4)
+
+    context = build_context(all_chunks[:5])
+
+    prompt = f"""You are a specialized maternal health AI assistant. Your task is to generate personalized, supportive, and practical health tips for an expectant mother based strictly on the provided WHO guidelines and her clinical assessment.
+
+PATIENT ASSESSMENT:
+- Hemoglobin: {req.hemoglobin} g/dL ({'Below normal reference threshold (Anemia risk)' if req.hemoglobin is not None and req.hemoglobin < 11.0 else 'Normal reference range'})
+- Pre-eclampsia history: {'Yes (Elevated risk)' if req.pre_eclampsia else 'No'}
+- History of Iron Injections: {'Yes' if req.iron_injection else 'No'}
+- Infection history: {'Yes' if req.infection else 'No'}
+- Weight gain during pregnancy: {req.weight_gain or 'Not recorded'}
+- Antenatal visits: {req.antenatal_visits if req.antenatal_visits is not None else 'Not recorded'}
+- Clinic booking: {'Booked' if req.booked else 'Un-booked'}
+- Parity: {req.parity or 'Not recorded'}
+- Age: {req.age or 'Not recorded'}
+- Malnutrition Screening Outcome: {req.prediction or 'Not assessed'}
+
+WHO EVIDENCE CONTEXT:
+{context}
+
+TASK & GUIDELINES:
+1. Generate 3 to 4 tailored tips.
+2. If the patient has low hemoglobin (< 11.0 g/dL) or pre-eclampsia, create high priority tips addressing those risks first.
+3. Every tip must be completely aligned with the WHO evidence context above. Preserve exact WHO recommendations and dosages (e.g., 30-60 mg elemental iron, 400 µg folic acid, 1.5-2.0 g elemental calcium for pre-eclampsia where indicated in WHO context).
+4. Do NOT prescribe medication brands or make a clinical diagnosis.
+5. Provide practical dietary advice (e.g., pairing iron with vitamin C, avoiding tea/coffee with iron-rich meals, staying hydrated, attending ANC visits).
+6. Return ONLY a valid JSON array of objects. Do not wrap in markdown quotes or extra text.
+
+OUTPUT JSON FORMAT:
+[
+  {{
+    "id": "1",
+    "category": "Nutrition" | "Iron & Blood Health" | "Blood Pressure" | "Antenatal Care" | "Hydration & Rest",
+    "title": "Short encouraging title (3 to 6 words)",
+    "body": "2 to 3 sentences of clear, practical, supportive guidance.",
+    "priority": "high" | "medium" | "low",
+    "icon": "leaf" | "restaurant" | "water" | "calendar" | "heart" | "shield-checkmark",
+    "evidence_source": "WHO Maternal Health Guidelines"
+  }}
+]
+"""
+
+    response = None
+    models_to_try = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]
+    last_err = None
+
+    for model_name in models_to_try:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                break
+            except Exception as e:
+                last_err = e
+                err_str = str(e)
+                if "503" in err_str or "UNAVAILABLE" in err_str:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                break
+        if response is not None:
+            break
+
+    if response is None:
+        raise last_err
+
+    text = clean_answer(response.text)
+
+    # Strip markdown backticks if present
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    text = text.strip()
+
+    try:
+        tips = json.loads(text)
+        return tips
+    except Exception as e:
+        print(f"JSON parsing error: {e}. Raw text: {text}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail="Failed to parse structured tips from AI service.")
+
+
+@router.post("/tips/personalized")
+def personalized_tips(request: PersonalizedTipsRequest):
+    tips = generate_personalized_tips(request)
+    return {
+        "tips": tips,
+        "count": len(tips)
+    }
+

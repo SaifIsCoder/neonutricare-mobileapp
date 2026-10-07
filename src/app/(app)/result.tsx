@@ -50,6 +50,16 @@ export default function ResultScreen() {
         </>
       )}
 
+      {!!row && (
+        <Button
+          title="View personalized health tips"
+          icon="bulb"
+          variant="outline"
+          onPress={() => router.replace('/tips')}
+          style={styles.tipsBtn}
+        />
+      )}
+
       <Button
         title="Done"
         icon="checkmark-circle"
@@ -61,5 +71,7 @@ export default function ResultScreen() {
 }
 
 const styles = StyleSheet.create({
+  tipsBtn: { marginTop: Spacing.two },
   done: { marginTop: Spacing.one },
 });
+

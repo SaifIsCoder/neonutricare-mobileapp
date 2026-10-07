@@ -9,9 +9,14 @@ import { Screen } from '@/components/ui/screen';
 import { Select } from '@/components/ui/select';
 import { ErrorState } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
-import { Layout, Spacing } from '@/constants/theme';
+import { Layout, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { FIELDS, validate, type FormValues, type ValidationErrors } from '@/lib/prediction-form';
+import {
+  FIELDS,
+  validate,
+  type FormValues,
+  type ValidationErrors,
+} from '@/lib/prediction-form';
 import { PredictionError, submitAssessment } from '@/lib/predictions';
 
 export default function PredictScreen() {
@@ -27,9 +32,7 @@ export default function PredictScreen() {
 
   function setField(key: keyof FormValues, value: string) {
     setValues((prev) => ({ ...prev, [key]: value }));
-    // Clear the field's error as soon as the user edits it.
     setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
-    // A validation rejection from the service is stale once the answers change.
     setSubmitError(null);
   }
 
@@ -42,7 +45,6 @@ export default function PredictScreen() {
 
     setSubmitting(true);
     try {
-      // Predicts, then saves (CLAUDE.md golden rule 3), and returns the row id.
       const id = await submitAssessment(values);
       setValues({});
       router.push({ pathname: '/result', params: { id } });
@@ -51,7 +53,9 @@ export default function PredictScreen() {
         setSubmitError(err.message);
         setCanRetry(err.retryable);
       } else {
-        setSubmitError(err instanceof Error ? err.message : 'Could not save the assessment.');
+        setSubmitError(
+          err instanceof Error ? err.message : 'Could not save the assessment.',
+        );
         setCanRetry(true);
       }
     } finally {
@@ -66,24 +70,39 @@ export default function PredictScreen() {
     <Screen
       title="Risk prediction"
       subtitle={`All ${FIELDS.length} answers below feed the trained model directly.`}>
-      {/* Completion meter — the mockup has no equivalent, so it is drawn with
-          the same track/fill treatment as the result screen's factor bars. */}
-      <View style={styles.progress}>
-        <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+      <View style={styles.progressSection}>
+        <View style={styles.progressHeader}>
+          <ThemedText type="label" style={{ color: theme.textSecondary }}>
+            Assessment progress
+          </ThemedText>
+
+          <ThemedText type="label" style={{ color: theme.text }}>
+            {answered}/{FIELDS.length}
+          </ThemedText>
+        </View>
+
+        <View
+          style={[
+            styles.progressTrack,
+            { backgroundColor: theme.border },
+          ]}>
           <View
             style={[
               styles.progressFill,
-              { width: `${progress * 100}%`, backgroundColor: theme.primary },
+              {
+                width: `${progress * 100}%`,
+                backgroundColor: theme.primary,
+              },
             ]}
           />
         </View>
-        <ThemedText type="label" style={{ color: theme.textSecondary }}>
-          {answered}/{FIELDS.length}
-        </ThemedText>
       </View>
 
       {!!submitError && (
-        <ErrorState message={submitError} onRetry={canRetry ? onSubmit : undefined} />
+        <ErrorState
+          message={submitError}
+          onRetry={canRetry ? onSubmit : undefined}
+        />
       )}
 
       <View style={styles.form}>
@@ -128,9 +147,34 @@ export default function PredictScreen() {
 }
 
 const styles = StyleSheet.create({
-  progress: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2 },
-  progressTrack: { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  form: { gap: Layout.fieldGap },
-  submit: { marginTop: Spacing.one },
+  progressSection: {
+    gap: Spacing.one,
+    marginBottom: Spacing.one,
+  },
+
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  progressTrack: {
+    width: '100%',
+    height: 5,
+    borderRadius: Radius.sm,
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: Radius.sm,
+  },
+
+  form: {
+    gap: Layout.fieldGap,
+  },
+
+  submit: {
+    marginTop: Spacing.two,
+  },
 });

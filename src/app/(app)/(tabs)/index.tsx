@@ -37,7 +37,8 @@ export default function DashboardScreen() {
 
   const { data, error, loading, refreshing, refresh } = useAsyncData(fetchOverview);
 
-  const greetingName = data?.fullName?.trim() || session?.user.email?.split('@')[0] || 'there';
+  const greetingName =
+    data?.fullName?.trim() || session?.user.email?.split('@')[0] || 'there';
   const stats = data?.stats;
 
   return (
@@ -46,7 +47,7 @@ export default function DashboardScreen() {
       onRefresh={refresh}
       refreshing={refreshing}
       header={
-        <>
+        <View style={styles.headerContent}>
           <View style={[styles.avatar, { backgroundColor: theme.primaryLight }]}>
             <ThemedText type="cardTitle" style={{ color: theme.primaryDark }}>
               {initials(greetingName)}
@@ -57,80 +58,100 @@ export default function DashboardScreen() {
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
               {timeOfDayGreeting()}
             </ThemedText>
+
             <ThemedText type="screenTitle" numberOfLines={1}>
               {greetingName}
             </ThemedText>
           </View>
 
-          <IconButton icon="refresh" accessibilityLabel="Refresh overview" onPress={refresh} />
-        </>
+          <IconButton
+            icon="refresh"
+            accessibilityLabel="Refresh overview"
+            onPress={refresh}
+          />
+        </View>
       }>
       {!!error && <ErrorState message={error} onRetry={refresh} />}
 
       {loading && !error ? (
         <SkeletonCard lines={2} />
       ) : (
-        <View style={styles.metricGrid}>
-          <Metric
-            value={stats?.total_assessments}
-            label="Total assessments"
-            tone="teal"
-            style={styles.metricHalf}
-          />
-          <Metric
-            value={stats?.low_risk_cases}
-            label="Low risk cases"
-            tone="green"
-            style={styles.metricHalf}
-          />
-          <Metric
-            value={stats?.high_risk_cases}
-            label="High risk cases"
-            tone="amber"
-            style={styles.metricFull}
-          />
-        </View>
+        <>
+          <View style={styles.overviewSection}>
+            <SectionLabel>Overview</SectionLabel>
+
+            <View style={styles.metricGrid}>
+              <Metric
+                value={stats?.total_assessments}
+                label="Total assessments"
+                tone="teal"
+                style={styles.metricHalf}
+              />
+
+              <Metric
+                value={stats?.low_risk_cases}
+                label="Low risk cases"
+                tone="green"
+                style={styles.metricHalf}
+              />
+
+              <Metric
+                value={stats?.high_risk_cases}
+                label="High risk cases"
+                tone="amber"
+                style={styles.metricFull}
+              />
+            </View>
+          </View>
+        </>
       )}
 
-      <SectionLabel style={styles.sectionLabel}>Quick actions</SectionLabel>
+      <View style={styles.actionsSection}>
+        <SectionLabel>Quick actions</SectionLabel>
 
-      <View style={styles.actions}>
-        <ListCard
-          icon="clipboard"
-          tone="teal"
-          title="Risk prediction"
-          subtitle="Run a new malnutrition screening"
-          onPress={() => router.push('/predict')}
-        />
-        <ListCard
-          icon="woman"
-          tone="blue"
-          title="Maternal support"
-          subtitle="Guides for pregnancy & nutrition"
-          onPress={() => router.push('/maternal')}
-        />
-        <ListCard
-          icon="time"
-          tone="green"
-          title="Health records"
-          subtitle="View prediction history"
-          onPress={() => router.push('/records')}
-        />
-        <ListCard
-          icon="leaf"
-          tone="amber"
-          title="Health tips"
-          subtitle="Daily nutrition & care advice"
-          onPress={() => router.push('/tips')}
-        />
-        <ListCard
-          icon="chatbubbles"
-          tone="teal"
-          title="AI health assistant"
-          subtitle="Chat with our health assistant"
-          onPress={() => router.push('/assistant')}
-        />
+        <View style={styles.actions}>
+          <ListCard
+            icon="clipboard"
+            tone="teal"
+            title="Risk prediction"
+            subtitle="Run a new malnutrition screening"
+            onPress={() => router.push('/predict')}
+          />
+
+          <ListCard
+            icon="woman"
+            tone="blue"
+            title="Maternal support"
+            subtitle="Guides for pregnancy & nutrition"
+            onPress={() => router.push('/maternal')}
+          />
+
+          <ListCard
+            icon="time"
+            tone="green"
+            title="Health records"
+            subtitle="View prediction history"
+            onPress={() => router.push('/records')}
+          />
+
+          <ListCard
+            icon="leaf"
+            tone="amber"
+            title="Health tips"
+            subtitle="Daily nutrition & care advice"
+            onPress={() => router.push('/tips')}
+          />
+
+          <ListCard
+            icon="chatbubbles"
+            tone="teal"
+            title="AI health assistant"
+            subtitle="Chat with our health assistant"
+            onPress={() => router.push('/assistant')}
+          />
+        </View>
       </View>
+
       <Disclaimer />
     </Screen>
   );
@@ -160,10 +181,14 @@ function Metric({
 
   return (
     <View style={[styles.metric, { backgroundColor: palette.fill }, style]}>
-      <ThemedText type="metric" style={{ color: palette.ink }}>
+      <ThemedText type="metric" style={[styles.metricValue, { color: palette.ink }]}>
         {value ?? '—'}
       </ThemedText>
-      <ThemedText type="label" style={{ color: theme.textSecondary }} numberOfLines={1}>
+
+      <ThemedText
+        type="label"
+        style={{ color: theme.textSecondary }}
+        numberOfLines={1}>
         {label}
       </ThemedText>
     </View>
@@ -180,12 +205,24 @@ function timeOfDayGreeting(): string {
 /** Up to two initials for the avatar tile, mirroring the mockup's "AK". */
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
+
   if (parts.length === 0) return '?';
-  const letters = parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[1][0];
+
+  const letters =
+    parts.length === 1
+      ? parts[0].slice(0, 2)
+      : parts[0][0] + parts[1][0];
+
   return letters.toUpperCase();
 }
 
 const styles = StyleSheet.create({
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + 4,
+  },
+
   avatar: {
     width: Layout.iconButtonSize,
     height: Layout.iconButtonSize,
@@ -193,17 +230,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greeting: { flex: 1 },
-  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.listGap },
-  metric: {
-    borderRadius: Radius.lg,
-    padding: Spacing.three - 4,
+
+  greeting: {
+    flex: 1,
     gap: Spacing.half,
   },
-  // Two per row, then one spanning the full width — the mockup's 1fr 1fr grid
-  // with `grid-column: span 2` on the third tile.
-  metricHalf: { flexGrow: 1, flexBasis: '45%' },
-  metricFull: { flexGrow: 1, flexBasis: '100%' },
-  sectionLabel: { marginTop: Spacing.one },
-  actions: { gap: Layout.listGap },
+
+  overviewSection: {
+    gap: Spacing.two,
+  },
+
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Layout.listGap,
+  },
+
+  metric: {
+    minHeight: 88,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + 2,
+    justifyContent: 'center',
+    gap: Spacing.half,
+  },
+
+  metricValue: {
+    lineHeight: 32,
+  },
+
+  // Two equal metrics on the first row.
+  metricHalf: {
+    flexGrow: 1,
+    flexBasis: '45%',
+  },
+
+  // Full-width third metric.
+  metricFull: {
+    flexGrow: 1,
+    flexBasis: '100%',
+  },
+
+  actionsSection: {
+    marginTop: Spacing.four + 2,
+    gap: Spacing.two,
+  },
+
+  actions: {
+    gap: Layout.listGap,
+  },
 });

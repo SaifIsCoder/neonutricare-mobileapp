@@ -76,3 +76,73 @@ export async function askRag(question: string): Promise<AskResponse> {
   const data: AskResponse = await response.json();
   return data;
 }
+
+export type PersonalizedTip = {
+  id: string;
+  category: string;
+  title: string;
+  body: string;
+  priority: 'high' | 'medium' | 'low';
+  icon?: string;
+  evidence_source?: string;
+};
+
+export type PersonalizedTipsRequest = {
+  hemoglobin?: number | null;
+  pre_eclampsia?: boolean | null;
+  iron_injection?: boolean | null;
+  infection?: boolean | null;
+  weight_gain?: string | null;
+  antenatal_visits?: number | null;
+  booked?: boolean | null;
+  parity?: string | null;
+  age?: string | null;
+  prediction?: string | null;
+};
+
+export type PersonalizedTipsResponse = {
+  tips: PersonalizedTip[];
+  count: number;
+};
+
+/** POST /tips/personalized */
+export async function fetchPersonalizedTips(
+  payload: PersonalizedTipsRequest
+): Promise<PersonalizedTip[]> {
+  if (!RAG_API_URL) {
+    throw new Error(
+      'No RAG/prediction service configured. Set EXPO_PUBLIC_PREDICTION_API_URL or EXPO_PUBLIC_RAG_API_URL in .env'
+    );
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${RAG_API_URL}/tips/personalized`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const aborted = controller.signal.aborted;
+    console.error('Personalized tips network error:', err);
+    throw new Error(
+      aborted
+        ? `Personalized tips request timed out after ${TIMEOUT_MS / 1000} seconds.`
+        : `Could not connect to health tips service at ${RAG_API_URL}.`
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Health tips service error (${response.status})`);
+  }
+
+  const data: PersonalizedTipsResponse = await response.json();
+  return data.tips ?? [];
+}
+
