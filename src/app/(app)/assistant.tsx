@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -28,6 +28,7 @@ export default function AssistantScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -39,6 +40,26 @@ export default function AssistantScreen() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 50);
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const handleSend = async () => {
     const text = inputValue.trim();
@@ -104,12 +125,12 @@ export default function AssistantScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right', 'bottom']}>
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
-        >
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
           <View style={styles.column}>
             {/* Topbar matching Screen component */}
             <View style={styles.topbar}>
@@ -148,7 +169,18 @@ export default function AssistantScreen() {
             />
 
             {/* Input Area */}
-            <View style={[styles.inputArea, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+            <View
+              style={[
+                styles.inputArea,
+                {
+                  backgroundColor: theme.background,
+                  borderTopColor: theme.border,
+                  paddingBottom: isKeyboardVisible
+                    ? Spacing.two + 4
+                    : Math.max(Spacing.two + 4, insets.bottom),
+                },
+              ]}
+            >
               <TextInput
                 style={[
                   styles.input,
@@ -169,8 +201,8 @@ export default function AssistantScreen() {
               />
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -221,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Layout.screenPaddingX,
-    paddingVertical: Spacing.four,
+    paddingTop: Spacing.two + 4,
     gap: Spacing.two,
     borderTopWidth: StyleSheet.hairlineWidth,
   },

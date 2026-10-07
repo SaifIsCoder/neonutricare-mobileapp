@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.saif.dev.neonutricare"
+      "package": "com.saif.dev.neonutricare",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "output": "single",
