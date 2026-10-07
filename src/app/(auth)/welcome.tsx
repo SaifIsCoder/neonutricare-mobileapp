@@ -1,6 +1,6 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -13,12 +13,28 @@ import { useTheme } from '@/hooks/use-theme';
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { height } = useWindowDimensions();
+
+  const artHeight = Math.min(360, Math.max(220, height * 0.42));
+  const iconSize = Math.min(180, Math.max(120, Math.round(artHeight * 0.55)));
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.art, { backgroundColor: theme.primaryLight }]}>
-          <Ionicons name="fitness" size={64} color={theme.primary} />
+        <View
+          style={[
+            styles.art,
+            {
+              backgroundColor: theme.primaryLight,
+              height: artHeight,
+            },
+          ]}
+        >
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={{ width: iconSize, height: iconSize }}
+            contentFit="contain"
+          />
         </View>
 
         <View style={styles.body}>
@@ -56,7 +72,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   art: {
-    flex: 1,
     margin: Layout.screenPaddingX,
     marginBottom: 0,
     borderRadius: Radius.xxl,
@@ -64,9 +79,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
+    flex: 1,
     padding: Spacing.four - 2,
     paddingBottom: Spacing.four + 6,
     gap: Spacing.two,
+    justifyContent: 'center',
   },
   tagline: { marginBottom: Spacing.two },
   actions: { gap: Layout.listGap },

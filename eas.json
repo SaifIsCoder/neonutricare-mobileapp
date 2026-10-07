@@ -12,10 +12,22 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://swcuqghdpteksgusplrt.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_SO9PlETY_oqNM5ym_v8hkg_1vVqmMTo",
+        "EXPO_PUBLIC_PREDICTION_API_URL": "https://neonutricare-prediction-api.onrender.com",
+        "EXPO_PUBLIC_RAG_API_URL": "https://neonutricare-prediction-api.onrender.com"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://swcuqghdpteksgusplrt.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_SO9PlETY_oqNM5ym_v8hkg_1vVqmMTo",
+        "EXPO_PUBLIC_PREDICTION_API_URL": "https://neonutricare-prediction-api.onrender.com",
+        "EXPO_PUBLIC_RAG_API_URL": "https://neonutricare-prediction-api.onrender.com"
+      }
     }
   },
   "submit": {
