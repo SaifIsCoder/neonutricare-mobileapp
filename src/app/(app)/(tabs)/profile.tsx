@@ -123,6 +123,8 @@ export default function ProfileScreen() {
             value={draftName}
             onChangeText={setDraftName}
             autoCapitalize="words"
+            returnKeyType="done"
+            onSubmitEditing={saveName}
             editable={!saving}
           />
           <View style={styles.editActions}>

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Disclaimer } from '@/components/disclaimer';
 import { ThemedText } from '@/components/themed-text';
@@ -63,76 +63,71 @@ export default function PredictScreen() {
   const progress = answered / FIELDS.length;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen
-        title="Risk prediction"
-        subtitle={`All ${FIELDS.length} answers below feed the trained model directly.`}>
-        {/* Completion meter — the mockup has no equivalent, so it is drawn with
-            the same track/fill treatment as the result screen's factor bars. */}
-        <View style={styles.progress}>
-          <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progress * 100}%`, backgroundColor: theme.primary },
-              ]}
+    <Screen
+      title="Risk prediction"
+      subtitle={`All ${FIELDS.length} answers below feed the trained model directly.`}>
+      {/* Completion meter — the mockup has no equivalent, so it is drawn with
+          the same track/fill treatment as the result screen's factor bars. */}
+      <View style={styles.progress}>
+        <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${progress * 100}%`, backgroundColor: theme.primary },
+            ]}
+          />
+        </View>
+        <ThemedText type="label" style={{ color: theme.textSecondary }}>
+          {answered}/{FIELDS.length}
+        </ThemedText>
+      </View>
+
+      {!!submitError && (
+        <ErrorState message={submitError} onRetry={canRetry ? onSubmit : undefined} />
+      )}
+
+      <View style={styles.form}>
+        {FIELDS.map((field) =>
+          field.kind === 'select' ? (
+            <Select
+              key={field.key}
+              label={field.label}
+              choices={field.choices}
+              value={values[field.key]}
+              onChange={(code) => setField(field.key, code)}
+              error={errors[field.key]}
+              disabled={submitting}
             />
-          </View>
-          <ThemedText type="label" style={{ color: theme.textSecondary }}>
-            {answered}/{FIELDS.length}
-          </ThemedText>
-        </View>
-
-        {!!submitError && (
-          <ErrorState message={submitError} onRetry={canRetry ? onSubmit : undefined} />
+          ) : (
+            <TextField
+              key={field.key}
+              label={field.label}
+              placeholder={field.hint}
+              value={values[field.key] ?? ''}
+              onChangeText={(text) => setField(field.key, text)}
+              keyboardType={field.decimal ? 'decimal-pad' : 'number-pad'}
+              inputMode={field.decimal ? 'decimal' : 'numeric'}
+              editable={!submitting}
+              error={errors[field.key]}
+            />
+          ),
         )}
+      </View>
 
-        <View style={styles.form}>
-          {FIELDS.map((field) =>
-            field.kind === 'select' ? (
-              <Select
-                key={field.key}
-                label={field.label}
-                choices={field.choices}
-                value={values[field.key]}
-                onChange={(code) => setField(field.key, code)}
-                error={errors[field.key]}
-                disabled={submitting}
-              />
-            ) : (
-              <TextField
-                key={field.key}
-                label={field.label}
-                placeholder={field.hint}
-                value={values[field.key] ?? ''}
-                onChangeText={(text) => setField(field.key, text)}
-                keyboardType={field.decimal ? 'decimal-pad' : 'number-pad'}
-                inputMode={field.decimal ? 'decimal' : 'numeric'}
-                editable={!submitting}
-                error={errors[field.key]}
-              />
-            ),
-          )}
-        </View>
+      <Button
+        title="Predict risk"
+        icon="sparkles"
+        onPress={onSubmit}
+        loading={submitting}
+        style={styles.submit}
+      />
 
-        <Button
-          title="Predict risk"
-          icon="sparkles"
-          onPress={onSubmit}
-          loading={submitting}
-          style={styles.submit}
-        />
-
-        <Disclaimer />
-      </Screen>
-    </KeyboardAvoidingView>
+      <Disclaimer />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   progress: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2 },
   progressTrack: { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },

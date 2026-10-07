@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import {
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -107,6 +108,8 @@ export function Screen({
             style={styles.flex}
             contentContainerStyle={[styles.content, contentStyle]}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             showsVerticalScrollIndicator={false}
             refreshControl={
               onRefresh ? (

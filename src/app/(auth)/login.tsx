@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -10,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -53,16 +51,13 @@ export default function LoginScreen() {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <SafeAreaView style={styles.flex}>
+        <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}>
-            <View style={[styles.brand, { backgroundColor: theme.primaryLight }]}>
-              <Ionicons name="fitness" size={24} color={theme.primary} />
-            </View>
-
+       
             <View style={styles.header}>
               <ThemedText type="subtitle">Welcome back</ThemedText>
               <ThemedText type="default" style={{ color: theme.textSecondary }}>

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Layout, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -52,7 +52,10 @@ export function Select({
         accessibilityValue={{ text: selected?.label ?? placeholder }}
         accessibilityState={{ disabled: !!disabled, expanded: open }}
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          Keyboard.dismiss();
+          setOpen(true);
+        }}
         style={({ pressed }) => [
           styles.trigger,
           {

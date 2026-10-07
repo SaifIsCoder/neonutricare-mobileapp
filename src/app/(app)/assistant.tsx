@@ -8,9 +8,8 @@ import {
   TextInput,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconButton } from '@/components/ui/screen';
@@ -28,6 +27,7 @@ type Message = {
 export default function AssistantScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -104,11 +104,11 @@ export default function AssistantScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right', 'bottom']}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
         >
           <View style={styles.column}>
             {/* Topbar matching Screen component */}
@@ -132,6 +132,8 @@ export default function AssistantScreen() {
               keyExtractor={(item) => item.id}
               renderItem={renderMessage}
               contentContainerStyle={styles.listContent}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
               ListFooterComponent={
